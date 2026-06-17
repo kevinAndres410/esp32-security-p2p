@@ -1,5 +1,5 @@
-const { encrypt, decrypt } = require('../backend/src/crypto/cipher');
-const { getCurrentKey, rotateKey } = require('../backend/src/crypto/keyManager');
+const { encrypt, decrypt } = require('./cipher');
+const { getCurrentKey, rotateKey } = require('./keyManager');
 
 class NodoESP32 {
   constructor(id) {
