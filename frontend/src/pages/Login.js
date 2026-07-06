@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function Login() {
+function Login({ onLogin }) {
   const [form, setForm] = useState({ usuario: '', password: '' });
   const [error, setError] = useState('');
 
@@ -13,7 +13,7 @@ function Login() {
       setError('Por favor completa todos los campos');
       return;
     }
-    console.log('Iniciando sesión con:', form.usuario);
+    onLogin();
   };
 
   return (
