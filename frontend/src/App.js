@@ -3,11 +3,18 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 
 function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [usuario, setUsuario] = useState(null);
 
-  return loggedIn
-    ? <Dashboard onLogout={() => setLoggedIn(false)} />
-    : <Login onLogin={() => setLoggedIn(true)} />;
+  const handleLogin = (data) => setUsuario(data);
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('usuario');
+    setUsuario(null);
+  };
+
+  return usuario
+    ? <Dashboard usuario={usuario} onLogout={handleLogout} />
+    : <Login onLogin={handleLogin} />;
 }
 
 export default App;
