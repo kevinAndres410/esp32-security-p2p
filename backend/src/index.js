@@ -1,4 +1,5 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
@@ -6,8 +7,10 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const authRoutes = require('./routes/authRoutes');
+const { initSocket } = require('./websocket/socket');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
@@ -20,7 +23,9 @@ app.get('/api/health', (req, res) => {
   res.json({ estado: 'ok', mensaje: 'Servidor funcionando correctamente' });
 });
 
-app.listen(PORT, () => {
+initSocket(server);
+
+server.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
 
