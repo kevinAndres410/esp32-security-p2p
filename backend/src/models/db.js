@@ -1,7 +1,10 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const db = new Database(path.join(__dirname, '../../database.sqlite'));
+// Permite que las pruebas de integración usen un archivo de base de datos
+// separado (DB_PATH), sin tocar la base de datos real en desarrollo/producción.
+const dbPath = process.env.DB_PATH || path.join(__dirname, '../../database.sqlite');
+const db = new Database(dbPath);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS usuarios (

@@ -38,4 +38,7 @@ server.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
 
-module.exports = app;
+// Se exportan ambos: "app" para pruebas con supertest (HTTP puro) y
+// "server" para poder cerrarlo (server.close()) al final de las pruebas
+// de integración que usan sockets reales.
+module.exports = { app, server };

@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Package: esp32_node",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "esp32_node"
+        },
+        {
+            "name": "Python Package: esp32_nodo",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "esp32_nodo"
+        }
+    ]
+}
