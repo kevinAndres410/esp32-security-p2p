@@ -1,0 +1,2 @@
+source C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader/gdbinit/symbols
+source C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader/gdbinit/connect

@@ -1,0 +1,3 @@
+-march=rv32imc_zicsr_zifencei
+-mtune=esp-base
+"-specs=C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/specs/picolibc.specs"

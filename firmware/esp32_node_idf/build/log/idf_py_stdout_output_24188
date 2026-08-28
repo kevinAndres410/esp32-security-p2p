@@ -1,0 +1,250 @@
+Command: C:\Users\Lenovo\.espressif\python_env\idf6.1_py3.11_env\Scripts\python.exe C:\esp\v6.1-beta1\esp-idf\tools/idf_monitor.py -p COM3 -b 115200 --toolchain-prefix riscv32-esp-elf- --target esp32c3 --revision 3 --decode-panic backtrace C:\Users\Lenovo\esp32-security-p2p\firmware\esp32_node_idf\build\esp32_node.elf C:\Users\Lenovo\esp32-security-p2p\firmware\esp32_node_idf\build\bootloader\bootloader.elf --force-color -m 'C:\Users\Lenovo\.espressif\python_env\idf6.1_py3.11_env\Scripts\python.exe' 'C:\esp\v6.1-beta1\esp-idf\tools\idf.py'
+[0;32mI (115) esp_image: segment 1: paddr=0003fc3c vaddr=3fc91c00 sizeESP-ROM:esp32c3-api1-20210207[0m
+Build:Feb  7 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0xf (SPI_FAST_FLASH_BOOT)
+Saved PC:0x40385926
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fcd5830,len:0x155c
+load:0x403cbf10,len:0xd10
+load:0x403ce710,len:0x2fcc
+entry 0x403cbf1a
+[0;32mI (24) boot: ESP-IDF v6.1-beta1 2nd stage bootloader[0m
+[0;32mI (24) boot: compile time Aug 28 2026 16:26:23[0m
+[0;32mI (25) boot: chip revision: v0.4[0m
+[0;32mI (25) boot: efuse block revision: v1.3[0m
+[0;32mI (28) boot.esp32c3: SPI Speed      : 80MHz[0m
+[0;32mI (32) boot.esp32c3: SPI Mode       : DIO[0m
+[0;32mI (36) boot.esp32c3: SPI Flash Size : 2MB[0m
+[0;32mI (40) boot: Enabling RNG early entropy source...[0m
+[0;32mI (44) boot: Partition Table:[0m
+[0;32mI (47) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (53) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (60) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (66) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (73) boot: End of partition table[0m
+[0;32mI (76) esp_image: segment 0: paddr=00010020 vaddr=3c0c0020 size=2fc14h (195604) map[0m
+[0;32mI (115) esp_image: segment 1: paddr=0003fc3c vaddr=3fc91c00 size=003dch (   988) load[0m
+[0;32mI (116) esp_image: segment 2: paddr=00040020 vaddr=42000020 size=b4750h (739152) map[0m
+[0;32mI (239) esp_image: segment 3: paddr=000f4778 vaddr=3fc91fdc size=0304ch ( 12364) load[0m
+[0;32mI (242) esp_image: segment 4: paddr=000f77cc vaddr=40380000 size=11b04h ( 72452) load[0m
+[0;32mI (256) esp_image: segment 5: paddr=001092d8 vaddr=50000000 size=00024h (    36) load[0m
+[0;32mI (262) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (263) boot: Disabling RNG early entropy source...[0m
+[0;32mI (274) cpu_start: Unicore app[0m
+[0;32mI (282) cpu_start: GPIO 20 and 21 are used as console UART I/O pins[0m
+[0;32mI (282) cpu_start: Pro cpu start user code[0m
+[0;32mI (283) cpu_start: cpu freq: 160000000 Hz[0m
+[0;32mI (284) app_init: Application information:[0m
+[0;32mI (288) app_init: Project name:     esp32_node[0m
+[0;32mI (292) app_init: App version:      b722347-dirty[0m
+[0;32mI (297) app_init: Compile time:     Aug 28 2026 16:20:21[0m
+[0;32mI (302) app_init: ELF file SHA256:  e9a731979...[0m
+[0;32mI (306) app_init: ESP-IDF:          v6.1-beta1[0m
+[0;32mI (310) efuse_init: Min chip rev:     v0.3[0m
+[0;32mI (314) efuse_init: Max chip rev:     v1.99 [0m
+[0;32mI (318) efuse_init: Chip rev:         v0.4[0m
+[0;32mI (322) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (328) heap_init: At 3FC9A530 len 00025AD0 (150 KiB): RAM[0m
+[0;32mI (333) heap_init: At 3FCC0000 len 0001C710 (113 KiB): Retention RAM[0m
+[0;32mI (339) heap_init: At 3FCDC710 len 00002950 (10 KiB): Retention RAM[0m
+[0;32mI (345) heap_init: At 50000024 len 00001FC4 (7 KiB): RTCRAM[0m
+[0;32mI (352) spi_flash: detected chip: generic[0m
+[0;32mI (354) spi_flash: flash io: dio[0m
+[0;33mW (357) spi_flash: Detected size(4096k) larger than the size in the binary image header(2048k). Using the size in the binary image header.[0m
+[0;32mI (370) sleep_gpio: Configure to isolate all GPIO pins in sleep state[0m
+[0;32mI (376) sleep_gpio: Enable automatic switching of GPIO sleep configuration[0m
+[0;32mI (383) main_task: Started on CPU0[0m
+[0;32mI (383) main_task: Calling app_main()[0m
+[0;32mI (393) pp: pp rom version: 9387209[0m
+[0;32mI (393) net80211: net80211 rom version: 9387209[0m
+[0;32mI (403) wifi:wifi driver task: 3fca298c, prio:23, stack:6656, core=0[0m
+[0;32mI (403) wifi:wifi firmware version: add112d[0m
+[0;32mI (403) wifi:wifi certification version: v7.0[0m
+[0;32mI (403) wifi:config NVS flash: enabled[0m
+[0;32mI (413) wifi:config nano formatting: disabled[0m
+[0;32mI (413) wifi:Init data frame dynamic rx buffer num: 32[0m
+[0;32mI (423) wifi:Init static rx mgmt buffer num: 5[0m
+[0;32mI (423) wifi:Init management short buffer num: 32[0m
+[0;32mI (423) wifi:Init dynamic tx buffer num: 32[0m
+[0;32mI (433) wifi:Init static tx FG buffer num: 2[0m
+[0;32mI (433) wifi:Init static rx buffer size: 1600[0m
+[0;32mI (443) wifi:Init static rx buffer num: 10[0m
+[0;32mI (443) wifi:Init dynamic rx buffer num: 32[0m
+[0;32mI (443) wifi_init: rx ba win: 6[0m
+[0;32mI (453) wifi_init: accept mbox: 6[0m
+[0;32mI (453) wifi_init: tcpip mbox: 32[0m
+[0;32mI (453) wifi_init: udp mbox: 6[0m
+[0;32mI (463) wifi_init: tcp mbox: 6[0m
+[0;32mI (463) wifi_init: tcp tx win: 5760[0m
+[0;32mI (463) wifi_init: tcp rx win: 5760[0m
+[0;32mI (463) wifi_init: tcp mss: 1440[0m
+[0;32mI (473) wifi_init: WiFi IRAM OP enabled[0m
+[0;32mI (473) wifi_init: WiFi RX IRAM OP enabled[0m
+[0;32mI (483) phy_init: phy_version 1235,8bd8c6fc,Apr 13 2026,18:46:20[0m
+[0;32mI (513) wifi:mode : sta (44:bd:8d:29:7b:78)[0m
+[0;32mI (513) wifi:enable tsf[0m
+[0;32mI (513) ESPNOW: espnow [version: 2.0] init[0m
+[0;32mI (523) espnow: ESP-NOW ready on channel 6[0m
+[0;32mI (913) wifi:new:<3,1>, old:<1,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (913) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (943) wifi:state: auth -> assoc (0x0)[0m
+[0;32mI (1943) wifi:state: assoc -> init (0x400)[0m
+[0;32mI (1953) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (4243) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (4253) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (5263) wifi:state: auth -> init (0x200)[0m
+[0;32mI (5273) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (7623) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (7623) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (7663) wifi:state: auth -> assoc (0x0)[0m
+[0;32mI (8663) wifi:state: assoc -> init (0x400)[0m
+[0;32mI (8673) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (11003) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (11003) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (11033) wifi:state: auth -> assoc (0x0)[0m
+[0;32mI (12033) wifi:state: assoc -> init (0x400)[0m
+[0;32mI (12043) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (14383) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (14383) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (15393) wifi:state: auth -> init (0x200)[0m
+[0;32mI (15403) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (17763) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (17763) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (18773) wifi:state: auth -> init (0x200)[0m
+[0;32mI (18783) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (21143) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (21143) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (22153) wifi:state: auth -> init (0x200)[0m
+[0;32mI (22163) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (24523) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (24523) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (25533) wifi:state: auth -> init (0x200)[0m
+[0;32mI (25543) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (27903) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (27903) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (28913) wifi:state: auth -> init (0x200)[0m
+[0;32mI (28923) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;33mW (30523) gateway: Wi-Fi unavailable; receiving ESP-NOW only[0m
+[0;32mI (31283) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (31283) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (31313) wifi:state: auth -> assoc (0x0)[0m
+[0;32mI (32313) wifi:state: assoc -> init (0x400)[0m
+[0;32mI (32323) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (34663) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (34663) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (35673) wifi:state: auth -> init (0x200)[0m
+[0;32mI (35683) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (38043) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (38043) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (39053) wifi:state: auth -> init (0x200)[0m
+[0;32mI (39063) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (41423) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (41423) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (42433) wifi:state: auth -> init (0x200)[0m
+[0;32mI (42443) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (44803) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (44803) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (45813) wifi:state: auth -> init (0x200)[0m
+[0;32mI (45823) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (48183) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (48183) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (49193) wifi:state: auth -> init (0x200)[0m
+[0;32mI (49203) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (51553) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (51563) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (52573) wifi:state: auth -> init (0x200)[0m
+[0;32mI (52583) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (54933) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (54943) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (55953) wifi:state: auth -> init (0x200)[0m
+[0;32mI (55963) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (58313) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (58313) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (59333) wifi:state: auth -> init (0x200)[0m
+[0;32mI (59343) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (61693) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (61693) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (61723) wifi:state: auth -> assoc (0x0)[0m
+[0;32mI (62733) wifi:state: assoc -> init (0x400)[0m
+[0;32mI (62743) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (65073) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (65073) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (66083) wifi:state: auth -> init (0x200)[0m
+[0;32mI (66093) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (68453) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (68453) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (69493) wifi:state: auth -> init (0x200)[0m
+[0;32mI (69503) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (71833) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (71833) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (72843) wifi:state: auth -> init (0x200)[0m
+[0;32mI (72853) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (75213) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (75213) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (76223) wifi:state: auth -> init (0x200)[0m
+[0;32mI (76233) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (78593) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (78593) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (79603) wifi:state: auth -> init (0x200)[0m
+[0;32mI (79613) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (81973) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (81973) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (82983) wifi:state: auth -> init (0x200)[0m
+[0;32mI (82993) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (85353) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (85353) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (86363) wifi:state: auth -> init (0x200)[0m
+[0;32mI (86373) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (88733) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (88733) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (89743) wifi:state: auth -> init (0x200)[0m
+[0;32mI (89753) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (92113) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (92113) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (93123) wifi:state: auth -> init (0x200)[0m
+[0;32mI (93133) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (95493) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (95493) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (96503) wifi:state: auth -> init (0x200)[0m
+[0;32mI (96513) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (98873) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (98873) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (99883) wifi:state: auth -> init (0x200)[0m
+[0;32mI (99893) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (102243) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (102253) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (103263) wifi:state: auth -> init (0x200)[0m
+[0;32mI (103273) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (105623) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (105633) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (106643) wifi:state: auth -> init (0x200)[0m
+[0;32mI (106653) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (109003) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (109003) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (110023) wifi:state: auth -> init (0x200)[0m
+[0;32mI (110033) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (112383) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (112383) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (113393) wifi:state: auth -> init (0x200)[0m
+[0;32mI (113403) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (115763) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (115763) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (116773) wifi:state: auth -> init (0x200)[0m
+[0;32mI (116783) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (119143) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (119143) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (120153) wifi:state: auth -> init (0x200)[0m
+[0;32mI (120163) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (122523) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (122523) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (123533) wifi:state: auth -> init (0x200)[0m
+[0;32mI (123543) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (125903) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (125903) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (126913) wifi:state: auth -> init (0x200)[0m
+[0;32mI (126923) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (129283) wifi:new:<3,1>, old:<3,0>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
+[0;32mI (129283) wifi:state: init -> auth (0xb0)[0m
+[0;32mI (130293) wifi:state: auth -> init (0x200)[0m
+[0;32mI (130303) wifi:new:<3,0>, old:<3,1>, ap:<255,255>, sta:<3,1>, prof:1, snd_ch_cfg:0x0[0m
