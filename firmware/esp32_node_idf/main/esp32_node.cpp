@@ -1,7 +1,10 @@
 /*
-  esp32_node.ino
+  esp32_node.cpp
   ---------------------------------------------------------------
   Firmware de un nodo ESP32-C3 Mini real para esp32-security-p2p (Sprint 4).
+  Versión ESP-IDF, usando "arduino-esp32" como componente (ver
+  main/idf_component.yml) — el código Arduino (setup/loop) se mantiene
+  igual al de la versión PlatformIO; solo cambia el sistema de build.
 
   Responsabilidades:
     1. Conectarse a WiFi.
@@ -9,24 +12,11 @@
     3. Resolver el reto de autenticación mutua (HMAC-SHA256) que
        envía backend/src/websocket/socket.js.
     4. Enviar heartbeat periódico una vez autenticado.
-    5. Actualizar su clave en RAM cuando el backend la rota.
+    5. Actualizar su clave cuando el backend la rota, y GUARDARLA en
+       memoria no volátil (NVS) para que sobreviva a un reinicio.
 
-  ================= CONFIGURACIÓN DE PLACA (ESP32-C3 Mini) =================
-  Arduino IDE > Herramientas:
-    - Placa: "ESP32C3 Dev Module"
-    - Core Arduino-ESP32: >= 2.0.9 (versiones < 2.0.3 no soportan C3)
-    - USB CDC On Boot: "Enabled"   <- la mayoría de módulos ESP32-C3 Mini
-      usan USB nativo (sin chip puente USB-UART). Si el monitor serial no
-      muestra nada, este es el primer valor a revisar.
-    - Flash Size: 4MB (80MHz)
-    - Partition Scheme: Default 4MB
   El chip C3 SÍ tiene aceleración por hardware para SHA/AES, así que
   mbedtls la usa automáticamente sin cambios en este código.
-  ===========================================================================
-
-  Librerías requeridas (Arduino Library Manager):
-    - WebSockets   (Links2004/arduinoWebSockets)  -> provee SocketIOclient.h
-    - ArduinoJson  (bblanchon/ArduinoJson)
 
   IMPORTANTE sobre compatibilidad criptográfica:
     El backend calcula HMAC-SHA256 usando el STRING de la clave
@@ -37,17 +27,20 @@
     Node lo hace con crypto.createHmac('sha256', claveHexString).
 */
 
+#include <Arduino.h>       // Necesario en ESP-IDF: en el .ino era implícito
 #include <WiFi.h>
 #include <SocketIOclient.h>
 #include <ArduinoJson.h>
+#include <Preferences.h>
 
 #include "config.h"
 #include "cipher.h"
 
 SocketIOclient socketIO;
+Preferences preferencias;
 
 bool autenticado = false;
-String claveActual = CLAVE_COMPARTIDA;
+String claveActual;
 
 unsigned long ultimoHeartbeat = 0;
 
@@ -65,6 +58,30 @@ void emitirEventoNodo(const String &evento, JsonDocument &datos) {
 
 void unirseNamespaceNodos() {
   socketIO.send(sIOtype_CONNECT, "/nodes");
+}
+
+// ===================== Persistencia de la clave (NVS) =====================
+// Guarda/recupera la clave compartida en memoria no volátil, para que un
+// reinicio o corte de luz no deje al nodo con una clave vieja mientras el
+// backend ya tiene una más reciente.
+
+void cargarClaveGuardada() {
+  preferencias.begin("nodo_cfg", false); // false = lectura/escritura
+
+  // Si nunca se ha guardado nada, usa la clave inicial del config.h
+  // y la guarda de una vez para dejar todo sincronizado desde el arranque.
+  claveActual = preferencias.getString("clave", CLAVE_COMPARTIDA);
+
+  if (!preferencias.isKey("clave")) {
+    preferencias.putString("clave", claveActual);
+  }
+
+  Serial.println("[Clave] Cargada desde memoria persistente (NVS)");
+}
+
+void guardarClaveActual() {
+  preferencias.putString("clave", claveActual);
+  Serial.println("[Clave] Guardada en memoria persistente (NVS)");
 }
 
 // ===================== Lógica de autenticación mutua =====================
@@ -102,6 +119,7 @@ void manejarClaveRotada(JsonDocument &doc) {
   if (deviceId != DEVICE_ID) return;
 
   claveActual = doc[1]["nuevaClave"].as<String>();
+  guardarClaveActual();
   Serial.println("[Clave] Actualizada por rotación del backend");
 }
 
@@ -184,6 +202,7 @@ void setup() {
   }
   delay(300);
 
+  cargarClaveGuardada();
   conectarWiFi();
 
   socketIO.begin(BACKEND_HOST, BACKEND_PORT, "/socket.io/?EIO=4");

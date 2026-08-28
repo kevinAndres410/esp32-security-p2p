@@ -1,10 +1,16 @@
 Listado de rutas de carpetas para el volumen Acer
-El número de serie del volumen es 000001CF BCE5:4945
-C:\USERS\DANIE\ONEDRIVE\DESKTOP\DE TODO\TESIS\ESP32-SECURITY-P2P-MAIN
+El número de serie del volumen es 00000051 BCE5:4945
+C:.
+|   .clangd
 |   .gitignore
 |   estructura.txt
+|   plan_pruebas_usabilidad.md
 |   README.md
 |   
++---.vscode
+|       launch.json
+|       settings.json
+|       
 +---backend
 |   |   .env
 |   |   .env.example
@@ -3448,7 +3454,9 @@ C:\USERS\DANIE\ONEDRIVE\DESKTOP\DE TODO\TESIS\ESP32-SECURITY-P2P-MAIN
 |       |       
 |       +---crypto
 |       |       cipher.js
+|       |       cipher.test.js
 |       |       keyManager.js
+|       |       keyManager.test.js
 |       |       
 |       +---middleware
 |       |       authMiddleware.js
@@ -3462,8 +3470,24 @@ C:\USERS\DANIE\ONEDRIVE\DESKTOP\DE TODO\TESIS\ESP32-SECURITY-P2P-MAIN
 |       |       keys.routes.js
 |       |       nodes.routes.js
 |       |       
-|       \---websocket
-|               socket.js
+|       +---websocket
+|       |       socket.js
+|       |       
+|       \---__test__
+|               integration.test.js
+|               
++---firmware
+|   \---esp32_node_idf
+|       |   CMakeLists.txt
+|       |   sdkconfig.defaults
+|       |   
+|       \---main
+|               cipher.c
+|               cipher.h
+|               CMakeLists.txt
+|               config.h
+|               esp32_node.cpp
+|               idf_component.yml
 |               
 +---frontend
 |   |   .gitignore
@@ -3491,6 +3515,7 @@ C:\USERS\DANIE\ONEDRIVE\DESKTOP\DE TODO\TESIS\ESP32-SECURITY-P2P-MAIN
 |       |   
 |       +---pages
 |       |       AlertsEvents.jsx
+|       |       Dashboard.js
 |       |       Dashboard.jsx
 |       |       KeyRotationSettings.jsx
 |       |       Login.js
@@ -3503,8 +3528,13 @@ C:\USERS\DANIE\ONEDRIVE\DESKTOP\DE TODO\TESIS\ESP32-SECURITY-P2P-MAIN
 |               nodes.service.js
 |               socket.service.js
 |               
-\---simulator
-        cipher.js
-        keyManager.js
-        nodo.js
-        
++---simulator
+|       cipher.js
+|       keyManager.js
+|       nodo.js
+|       nodo.test.js
+|       
+\---src
+    \---crypto
+            keyManager.js
+            

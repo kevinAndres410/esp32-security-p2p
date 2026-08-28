@@ -1,0 +1,7 @@
+# Fija el chip objetivo para que "idf.py set-target" no sea obligatorio,
+# aunque igual puedes correrlo manualmente si prefieres.
+CONFIG_IDF_TARGET="esp32c3"
+
+# Recomendado por el propio arduino-esp32 para que millis()/delay() y los
+# temporizadores de FreeRTOS se comporten igual que en Arduino/PlatformIO.
+CONFIG_FREERTOS_HZ=1000

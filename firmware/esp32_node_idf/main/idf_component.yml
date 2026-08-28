@@ -1,0 +1,8 @@
+# El gestor de componentes de ESP-IDF (idf.py) descarga esto automáticamente
+# la primera vez que compilas (idf.py build), sin instalación manual.
+#
+# NOTA: si tu ESP-IDF instalado no es v5.x, revisa la tabla de compatibilidad
+# en https://github.com/espressif/arduino-esp32/blob/master/docs/esp-idf_component.md
+# y ajusta la versión de abajo si "idf.py build" se queja de incompatibilidad.
+dependencies:
+  espressif/arduino-esp32: "^3.0.0"
