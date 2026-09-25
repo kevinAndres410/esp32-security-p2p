@@ -192,7 +192,7 @@ describe('NodoESP32 - canal P2P (enviarMensaje / recibirMensaje)', () => {
 
     const [, cifradoRecibido] = spyRecibir.mock.calls[0];
     expect(cifradoRecibido).not.toContain('información confidencial');
-    expect(cifradoRecibido).toMatch(/^[0-9a-f]{32}:[0-9a-f]+$/); // formato ivHex:cifradoHex
+    expect(cifradoRecibido).toMatch(/^[0-9a-f]{24}:[0-9a-f]+:[0-9a-f]{32}$/); // nonce:ciphertext:tag GCM
   });
 
   test('recibirMensaje con una clave incorrecta falla al descifrar', () => {

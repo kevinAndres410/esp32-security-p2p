@@ -1,44 +1,69 @@
-const crypto = require('crypto');
 const db = require('../models/db');
 const { emitEstadoRed, emitAlerta } = require('../websocket/socket');
 
 // GET /api/nodes
 function listNodes(req, res) {
-  const nodos = db.prepare(`SELECT * FROM nodos ORDER BY registrado_en DESC`).all();
+  const role = db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(req.usuario.id)?.rol;
+  const advanced = ['avanzado', 'administrador'].includes(role);
+  const nodos = db.prepare(`SELECT id, device_id, mac_address, descripcion,
+    CASE
+      WHEN estado IN ('bloqueado', 'pendiente') THEN estado
+      WHEN ultima_actividad IS NOT NULL
+        AND (julianday('now') - julianday(ultima_actividad)) * 86400 <= 45 THEN 'activo'
+      ELSE 'desconectado'
+    END AS estado,
+    ultima_actividad,
+    registrado_en, clave_rotada_en FROM nodos
+    WHERE (? = 1 OR device_id IN (SELECT d.device_id FROM kit_devices d
+      JOIN kits k ON k.id = d.kit_id WHERE k.owner_user_id = ?))
+    ORDER BY registrado_en DESC`).all(advanced ? 1 : 0, req.usuario.id);
   res.json(nodos);
 }
 
 // GET /api/nodes/:deviceId
 function getNode(req, res) {
-  const nodo = db.prepare(`SELECT * FROM nodos WHERE device_id = ?`).get(req.params.deviceId);
+  const role = db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(req.usuario.id)?.rol;
+  const advanced = ['avanzado', 'administrador'].includes(role);
+  const nodo = db.prepare(`SELECT id, device_id, mac_address, descripcion,
+    CASE
+      WHEN estado IN ('bloqueado', 'pendiente') THEN estado
+      WHEN ultima_actividad IS NOT NULL
+        AND (julianday('now') - julianday(ultima_actividad)) * 86400 <= 45 THEN 'activo'
+      ELSE 'desconectado'
+    END AS estado,
+    ultima_actividad,
+    registrado_en, clave_rotada_en FROM nodos WHERE device_id = ?
+    AND (? = 1 OR device_id IN (SELECT d.device_id FROM kit_devices d
+      JOIN kits k ON k.id = d.kit_id WHERE k.owner_user_id = ?))`)
+    .get(req.params.deviceId, advanced ? 1 : 0, req.usuario.id);
   if (!nodo) return res.status(404).json({ error: 'Nodo no encontrado' });
   res.json(nodo);
 }
 
 // POST /api/nodes  -> registrar nodo nuevo
 function registerNode(req, res) {
-  const { deviceId, descripcion } = req.body;
-  if (!deviceId) {
-    return res.status(400).json({ error: 'deviceId es requerido' });
+  if (db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(req.usuario.id)?.rol !== 'avanzado') {
+    return res.status(403).json({ error: 'Registro manual restringido al rol Experimentado' });
   }
-
-  const existente = db.prepare(`SELECT id FROM nodos WHERE device_id = ?`).get(deviceId);
-  if (existente) return res.status(409).json({ error: 'El nodo ya está registrado' });
-
-  const claveActual = crypto.randomBytes(32).toString('hex');
-
-  db.prepare(`INSERT INTO nodos (device_id, descripcion, estado, clave_actual) VALUES (?, ?, 'pendiente', ?)`)
-    .run(deviceId, descripcion || null, claveActual);
-
-  db.prepare(`INSERT INTO eventos (tipo, mensaje, nodo_id) VALUES (?, ?, ?)`)
-    .run('registro', `Nodo ${deviceId} registrado`, deviceId);
-
-  emitEstadoRed();
-  emitAlerta({ nodo_id: deviceId, tipo: 'info', mensaje: `Nuevo nodo registrado: ${deviceId}` });
-
-  // La clave compartida solo se retorna una vez, en el registro,
-  // para que el ESP32 la guarde en su firmware.
-  res.status(201).json({ deviceId, claveActual });
+  if (db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(req.usuario.id)?.rol !== 'avanzado') {
+    return res.status(403).json({ error: 'Registro manual restringido al rol Experimentado' });
+  }
+  const { deviceId, descripcion, macAddress } = req.body;
+  const { normalizeMac } = require('./kits.controller');
+  const normalizedMac = normalizeMac(macAddress);
+  if (!deviceId || !normalizedMac) return res.status(400).json({ error: 'Identificador y MAC válidos requeridos' });
+  const inventory = db.prepare(`SELECT d.*, k.owner_user_id FROM kit_devices d JOIN kits k ON k.id = d.kit_id
+    WHERE d.device_id = ? AND d.mac_address = ?`).get(deviceId, normalizedMac);
+  if (!inventory || inventory.owner_user_id !== req.usuario.id) {
+    return res.status(403).json({ error: 'Solo se admiten nodos del kit asignado a tu cuenta' });
+  }
+  const existing = db.prepare('SELECT id FROM nodos WHERE device_id = ? OR mac_address = ?').get(deviceId, normalizedMac);
+  if (existing) return res.status(409).json({ error: 'El nodo ya está registrado' });
+  const pending = db.prepare("SELECT id FROM device_requests WHERE kit_device_id = ? AND status = 'pending'").get(inventory.id);
+  if (pending) return res.status(409).json({ error: 'Ya existe una solicitud pendiente' });
+  const result = db.prepare(`INSERT INTO device_requests (kit_device_id, requester_user_id, method, reason)
+    VALUES (?, ?, 'manual', ?)`).run(inventory.id, req.usuario.id, String(descripcion || '').slice(0, 200));
+  res.status(201).json({ requestId: result.lastInsertRowid, deviceId, macAddress: normalizedMac, estado: 'pendiente' });
 }
 
 // PATCH /api/nodes/:deviceId/block
@@ -61,6 +86,7 @@ function unblockNode(req, res) {
   const { deviceId } = req.params;
   const nodo = db.prepare(`SELECT * FROM nodos WHERE device_id = ?`).get(deviceId);
   if (!nodo) return res.status(404).json({ error: 'Nodo no encontrado' });
+  if (nodo.admission_status !== 'approved') return res.status(409).json({ error: 'Nodo pendiente de aprobación' });
 
   db.prepare(`UPDATE nodos SET estado = 'activo' WHERE device_id = ?`).run(deviceId);
   emitEstadoRed();
@@ -73,6 +99,9 @@ function deleteNode(req, res) {
   const nodo = db.prepare(`SELECT * FROM nodos WHERE device_id = ?`).get(deviceId);
   if (!nodo) return res.status(404).json({ error: 'Nodo no encontrado' });
 
+  db.prepare(`UPDATE device_requests SET status = 'revoked', decided_at = CURRENT_TIMESTAMP
+    WHERE kit_device_id IN (SELECT id FROM kit_devices WHERE device_id = ?) AND status = 'approved'`)
+    .run(deviceId);
   db.prepare(`DELETE FROM nodos WHERE device_id = ?`).run(deviceId);
   db.prepare(`INSERT INTO eventos (tipo, mensaje, nodo_id) VALUES (?, ?, ?)`)
     .run('eliminacion', `Nodo ${deviceId} eliminado del sistema`, deviceId);

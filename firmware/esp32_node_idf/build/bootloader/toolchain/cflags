@@ -1,3 +1,6 @@
-"-specs=C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader/specs/picolibc.specs"
--march=rv32imc_zicsr_zifencei
--mtune=esp-base
+"-specs=C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build/bootloader/specs/picolibc.specs"
+-Wno-frame-address
+-mlongcalls
+-fno-builtin-memcpy
+-fno-builtin-memset
+-fno-builtin-bzero

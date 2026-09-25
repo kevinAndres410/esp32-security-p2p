@@ -10,8 +10,12 @@ const authRoutes = require('./routes/authRoutes');
 const nodesRoutes = require('./routes/nodes.routes');
 const eventsRoutes = require('./routes/events.routes');
 const keysRoutes = require('./routes/keys.routes');
+const gatewayRoutes = require('./routes/gateway.routes');
+const kitsRoutes = require('./routes/kits.routes');
 const { verificarToken } = require('./middleware/authMiddleware');
 const { initSocket } = require('./websocket/socket');
+const { startRotation } = require('./crypto/keyManager');
+const { rotateActiveNodeKeys } = require('./services/keyRotation.service');
 
 const app = express();
 const server = http.createServer(app);
@@ -22,6 +26,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/gateway', gatewayRoutes);
+app.use('/api/kits', kitsRoutes);
 
 // Rutas Sprint 3, protegidas con el login existente (requieren Bearer token)
 app.use('/api/nodes', verificarToken, nodesRoutes);
@@ -33,6 +39,12 @@ app.get('/api/health', (req, res) => {
 });
 
 initSocket(server);
+
+const rotationMinutes = Number(process.env.KEY_ROTATION_MINUTES || 5);
+startRotation(rotationMinutes, () => {
+  const rotations = rotateActiveNodeKeys();
+  console.log(`[KeyManager] Rotación automática aplicada a ${rotations.length} nodo(s) activos`);
+});
 
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);

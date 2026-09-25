@@ -22,7 +22,8 @@ function verificarToken(req, res, next) {
 }
 
 function soloAvanzado(req, res, next) {
-  if (req.usuario.rol !== 'avanzado') {
+  const currentRole = db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(req.usuario.id)?.rol;
+  if (!['avanzado', 'administrador'].includes(currentRole)) {
     return res.status(403).json({ error: 'Acceso restringido a usuarios avanzados' });
   }
   next();
@@ -47,6 +48,7 @@ function verificarRetoNodo(deviceId, reto, respuesta) {
 
   if (!nodo) return { ok: false, motivo: 'nodo_no_registrado' };
   if (nodo.estado === 'bloqueado') return { ok: false, motivo: 'nodo_bloqueado' };
+  if (nodo.admission_status !== 'approved') return { ok: false, motivo: 'nodo_pendiente' };
 
   const esperado = calcularHmac(nodo.clave_actual, reto);
   const bufEsperado = Buffer.from(esperado);
@@ -72,20 +74,23 @@ function verificarAutenticacionNodo(req, res, next) {
   }
 
   const nodo = db.prepare(`SELECT * FROM nodos WHERE device_id = ?`).get(deviceId);
-  if (!nodo || nodo.estado === 'bloqueado') {
+  if (!nodo || nodo.estado === 'bloqueado' || nodo.admission_status !== 'approved') {
     return res.status(403).json({ error: 'Nodo no autorizado' });
   }
 
-  const esperado = calcularHmac(nodo.clave_actual, `${deviceId}:${timestamp}`);
-  const bufEsperado = Buffer.from(esperado);
   const bufRecibido = Buffer.from(firma);
 
-  const valido =
-    bufEsperado.length === bufRecibido.length && crypto.timingSafeEqual(bufEsperado, bufRecibido);
-
-  if (!valido) return res.status(401).json({ error: 'Firma inválida' });
+  const matches = (key) => {
+    if (!key) return false;
+    const expected = Buffer.from(calcularHmac(key, `${deviceId}:${timestamp}`));
+    return expected.length === bufRecibido.length && crypto.timingSafeEqual(expected, bufRecibido);
+  };
+  const currentKeyValid = matches(nodo.clave_actual);
+  const previousKeyValid = !currentKeyValid && matches(nodo.clave_anterior);
+  if (!currentKeyValid && !previousKeyValid) return res.status(401).json({ error: 'Firma inválida' });
 
   req.nodo = nodo;
+  req.versionClave = currentKeyValid ? 'actual' : 'anterior';
   next();
 }
 

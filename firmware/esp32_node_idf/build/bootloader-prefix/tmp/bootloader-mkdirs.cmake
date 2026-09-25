@@ -10,18 +10,18 @@ if(NOT EXISTS "C:/esp/v6.1-beta1/esp-idf/components/bootloader/subproject")
   file(MAKE_DIRECTORY "C:/esp/v6.1-beta1/esp-idf/components/bootloader/subproject")
 endif()
 file(MAKE_DIRECTORY
-  "C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader"
-  "C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader-prefix"
-  "C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader-prefix/tmp"
-  "C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader-prefix/src/bootloader-stamp"
-  "C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader-prefix/src"
-  "C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader-prefix/src/bootloader-stamp"
+  "C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build/bootloader"
+  "C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build/bootloader-prefix"
+  "C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build/bootloader-prefix/tmp"
+  "C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build/bootloader-prefix/src/bootloader-stamp"
+  "C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build/bootloader-prefix/src"
+  "C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build/bootloader-prefix/src/bootloader-stamp"
 )
 
 set(configSubDirs )
 foreach(subDir IN LISTS configSubDirs)
-    file(MAKE_DIRECTORY "C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader-prefix/src/bootloader-stamp/${subDir}")
+    file(MAKE_DIRECTORY "C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build/bootloader-prefix/src/bootloader-stamp/${subDir}")
 endforeach()
 if(cfgdir)
-  file(MAKE_DIRECTORY "C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/bootloader-prefix/src/bootloader-stamp${cfgdir}") # cfgdir has leading slash
+  file(MAKE_DIRECTORY "C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build/bootloader-prefix/src/bootloader-stamp${cfgdir}") # cfgdir has leading slash
 endif()

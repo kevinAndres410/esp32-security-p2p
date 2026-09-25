@@ -1,0 +1,19 @@
+Command: cmake -G Ninja -B C:\Users\danie\OneDrive\Desktop\TESIS\esp32-security-p2p-main\firmware\esp32_node_idf\build_gateway -DPYTHON_DEPS_CHECKED=1 -DPYTHON=C:\Espressif\tools\python\v6.1-beta1\venv\Scripts\python.exe -DESP_PLATFORM=1 -DFIRMWARE_PROFILE=gateway -DCCACHE_ENABLE=False C:\Users\danie\OneDrive\Desktop\TESIS\esp32-security-p2p-main\firmware\esp32_node_idf
+-- IDF_TARGET is not set, guessed 'esp32' from sdkconfig 'C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/sdkconfig'
+-- Found Git: C:/Program Files/Git/cmd/git.exe (found version "2.51.0.windows.1")
+-- Component directory C:/esp/v6.1-beta1/esp-idf/components/idf_test does not contain a CMakeLists.txt file. No component will be added
+-- git rev-parse returned 'fatal: detected dubious ownership in repository at 'C:/esp/v6.1-beta1/esp-idf'
+'C:/esp/v6.1-beta1/esp-idf' is owned by:
+	DanielRo/danie (S-1-5-21-1815904335-2287571195-1698795620-1001)
+but the current user is:
+	DanielRo/CodexSandboxOffline (S-1-5-21-1815904335-2287571195-1698795620-1006)
+To add an exception for this directory, call:
+
+	git config --global --add safe.directory C:/esp/v6.1-beta1/esp-idf'
+-- Minimal build - OFF
+-- The C compiler identification is unknown
+-- The CXX compiler identification is unknown
+-- The ASM compiler identification is unknown
+-- Found assembler: xtensa-esp32-elf-gcc
+-- Warning: Did not find file Compiler/-ASM
+-- Configuring incomplete, errors occurred!

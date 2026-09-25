@@ -1,6 +1,6 @@
-const crypto = require('crypto');
 const db = require('../models/db');
-const { emitEstadoRed, emitAlerta, emitirClaveRotada } = require('../websocket/socket');
+const { emitEstadoRed } = require('../websocket/socket');
+const { rotateNodeKey, rotateActiveNodeKeys } = require('../services/keyRotation.service');
 
 // GET /api/keys/:deviceId
 function getKeyInfo(req, res) {
@@ -18,21 +18,15 @@ function getKeyInfo(req, res) {
 // POST /api/keys/:deviceId/rotate -> fuerza rotación manual de clave de un nodo específico
 function rotateKey(req, res) {
   const { deviceId } = req.params;
-  const nodo = db.prepare(`SELECT * FROM nodos WHERE device_id = ?`).get(deviceId);
-  if (!nodo) return res.status(404).json({ error: 'Nodo no encontrado' });
-
-  const nuevaClave = crypto.randomBytes(32).toString('hex');
-  db.prepare(`UPDATE nodos SET clave_actual = ? WHERE device_id = ?`).run(nuevaClave, deviceId);
-
-  db.prepare(`INSERT INTO eventos (tipo, mensaje, nodo_id) VALUES (?, ?, ?)`)
-    .run('rotacion', `Clave rotada manualmente para nodo ${deviceId}`, deviceId);
-
-  // Notifica al nodo real (ESP32) por WebSocket para que reemplace su copia local
-  emitirClaveRotada(deviceId, nuevaClave);
+  const result = rotateNodeKey(deviceId, 'manual');
+  if (!result.ok) return res.status(result.status).json({ error: result.error });
   emitEstadoRed();
-  emitAlerta({ nodo_id: deviceId, tipo: 'rotacion', mensaje: `Clave rotada: ${deviceId}` });
-
-  res.json({ deviceId, claveActual: nuevaClave.substring(0, 16) + '...' });
+  res.json({ deviceId, claveActual: result.newKey.substring(0, 16) + '...' });
 }
 
-module.exports = { getKeyInfo, rotateKey };
+function rotateAllKeys(req, res) {
+  const rotations = rotateActiveNodeKeys('manual');
+  res.json({ mensaje: 'Rotación global iniciada', nodosRotados: rotations.length });
+}
+
+module.exports = { getKeyInfo, rotateKey, rotateAllKeys };

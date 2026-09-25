@@ -1,4 +1,4 @@
-/* * Data converted from C:/Users/Lenovo/esp32-security-p2p/firmware/esp32_node_idf/build/esp-idf/mbedtls/x509_crt_bundle
+/* * Data converted from C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build/esp-idf/mbedtls/x509_crt_bundle
  */
 .data
 #if !defined (__APPLE__) && !defined (__linux__)

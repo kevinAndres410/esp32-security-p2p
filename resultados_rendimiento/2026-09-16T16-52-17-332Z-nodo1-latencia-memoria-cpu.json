@@ -1,0 +1,49 @@
+{
+  "label": "nodo1-latencia-memoria-cpu",
+  "distance": "cercana-sin-medir",
+  "startedAt": "2026-09-16T16:52:17.332Z",
+  "finishedAt": "2026-09-16T16:54:17.353Z",
+  "durationSeconds": 120.02,
+  "expectedDeviceCount": 1,
+  "totalReceivedPackets": 12,
+  "aggregateThroughputPacketsPerSecond": 0.1,
+  "simultaneousPresencePercent": 100,
+  "devices": [
+    {
+      "deviceId": "esp32-001",
+      "mac": "20:50:0D:17:C8:D0",
+      "receivedPackets": 12,
+      "expectedPackets": 12,
+      "missingPackets": 0,
+      "lossPercent": 0,
+      "latencyRttMs": {
+        "minimum": 177,
+        "average": 213.17,
+        "p50": 195,
+        "p95": 336,
+        "maximum": 336
+      },
+      "interarrivalMs": {
+        "average": 9950.73,
+        "p95": 10006,
+        "maximum": 10006
+      },
+      "memoryBytes": {
+        "averageFree": 217440,
+        "minimumFree": 217440,
+        "minimumEver": 216472
+      },
+      "cpuPercent": {
+        "average": 0.06,
+        "p95": 0.06,
+        "maximum": 0.06
+      }
+    }
+  ],
+  "notes": [
+    "RTT incluye nodo, ESP-NOW, gateway, petición/respuesta HTTP del backend y ACK de regreso.",
+    "La pérdida es de secuencias de heartbeat entre el primer y el último paquete recibidos; no incluye pérdidas anteriores/posteriores a esa ventana.",
+    "La presencia simultánea se calcula cada segundo con una tolerancia de 25 s, tras 20 s de calentamiento.",
+    "El consumo de energía requiere corriente y voltaje de un medidor externo; no se estima por software."
+  ]
+}

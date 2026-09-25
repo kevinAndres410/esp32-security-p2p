@@ -3,9 +3,17 @@ const db = require('../models/db');
 // GET /api/events?nodeId=&tipo=&limit=
 function listEvents(req, res) {
   const { nodeId, tipo, limit = 100 } = req.query;
+  const role = db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(req.usuario.id)?.rol;
+  const advanced = ['avanzado', 'administrador'].includes(role);
 
   let query = `SELECT * FROM eventos WHERE 1=1`;
   const params = [];
+
+  if (!advanced) {
+    query += ` AND nodo_id IN (SELECT d.device_id FROM kit_devices d
+      JOIN kits k ON k.id = d.kit_id WHERE k.owner_user_id = ?)`;
+    params.push(req.usuario.id);
+  }
 
   if (nodeId) {
     query += ` AND nodo_id = ?`;
@@ -17,7 +25,7 @@ function listEvents(req, res) {
   }
 
   query += ` ORDER BY creado_en DESC LIMIT ?`;
-  params.push(Number(limit));
+  params.push(Math.min(200, Math.max(1, Number(limit) || 100)));
 
   const eventos = db.prepare(query).all(...params);
   res.json(eventos);

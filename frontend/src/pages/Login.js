@@ -1,71 +1,53 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-function Login({ onLogin }) {
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+export default function Login({ onLogin, onRegister, message }) {
   const [form, setForm] = useState({ email: '', password: '' });
+  const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
-  const [cargando, setCargando] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    const email = localStorage.getItem('rememberedEmail');
+    if (email) { setForm((current) => ({ ...current, email })); setRemember(true); }
+  }, []);
 
-  const handleLogin = async () => {
-    if (!form.email || !form.password) {
-      setError('Por favor completa todos los campos');
-      return;
-    }
-    setCargando(true);
-    setError('');
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!form.email || !form.password) { setError('Por favor completa todos los campos.'); return; }
+    if (remember) localStorage.setItem('rememberedEmail', form.email);
+    else localStorage.removeItem('rememberedEmail');
+    setLoading(true); setError('');
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', form);
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('usuario', JSON.stringify(res.data.usuario));
-      onLogin(res.data.usuario);
-    } catch (e) {
-      setError(e.response?.data?.error || 'Error al conectar con el servidor');
-    }
-    setCargando(false);
+      const response = await axios.post(`${API_URL}/auth/login`, form);
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('usuario', JSON.stringify(response.data.usuario));
+      onLogin(response.data.usuario);
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Error al conectar con el servidor.');
+    } finally { setLoading(false); }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>🔒 ESP32 Security P2P</h2>
-        <p style={styles.subtitle}>Ingresa tus credenciales</p>
-        {error && <p style={styles.error}>{error}</p>}
-        <input
-          style={styles.input}
-          type="email"
-          name="email"
-          placeholder="Correo electrónico"
-          value={form.email}
-          onChange={handleChange}
-        />
-        <input
-          style={styles.input}
-          type="password"
-          name="password"
-          placeholder="Contraseña"
-          value={form.password}
-          onChange={handleChange}
-        />
-        <button style={styles.button} onClick={handleLogin} disabled={cargando}>
-          {cargando ? 'Ingresando...' : 'Iniciar sesión'}
-        </button>
-      </div>
-    </div>
+    <main className="login-page">
+      <div className="ambient ambient-one" /><div className="ambient ambient-two" />
+      <section className="login-card" aria-labelledby="login-title">
+        <div className="login-logo" aria-hidden="true">S</div>
+        <p className="eyebrow">ESP32 SECURITY P2P</p>
+        <h1 id="login-title">Bienvenido de nuevo</h1>
+        <p className="subtitle">Ingresa tus credenciales para acceder a tu panel seguro.</p>
+        <form onSubmit={submit} className="login-form">
+          {message && <p className="feedback success" role="status">{message}</p>}
+          {error && <p className="feedback error" role="alert">{error}</p>}
+          <label>Correo electrónico<input type="email" autoComplete="email" placeholder="nombre@ejemplo.com" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
+          <label>Contraseña<input type="password" autoComplete="current-password" placeholder="••••••••" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /></label>
+          <div className="login-options"><label className="remember"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /> Recordarme</label><a href="#recuperar">¿Olvidaste tu contraseña?</a></div>
+          <button className="primary-button" disabled={loading}>{loading ? 'Ingresando…' : <>Iniciar sesión <span>→</span></>}</button>
+        </form>
+        <footer>¿Aún no tienes una cuenta? <button className="link-button" onClick={onRegister}>Crear una cuenta</button></footer>
+      </section>
+    </main>
   );
 }
-
-const styles = {
-  container: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0f172a' },
-  card: { backgroundColor: '#1e293b', padding: '40px', borderRadius: '12px', width: '360px', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' },
-  title: { color: '#f8fafc', textAlign: 'center', marginBottom: '8px' },
-  subtitle: { color: '#94a3b8', textAlign: 'center', marginBottom: '24px' },
-  input: { width: '100%', padding: '12px', marginBottom: '16px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#f8fafc', fontSize: '14px', boxSizing: 'border-box' },
-  button: { width: '100%', padding: '12px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: 'pointer', fontWeight: 'bold' },
-  error: { color: '#f87171', textAlign: 'center', marginBottom: '12px' }
-};
-
-export default Login;

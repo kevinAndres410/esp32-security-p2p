@@ -1,0 +1,27 @@
+◇ injected env (2) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+[KeyManager] Rotación automática cada 5 minutos
+Servidor corriendo en http://localhost:5000
+[Socket] Cliente conectado: ZHETWnv833yO9Fp7AAAB
+[KeyManager] Clave rotada: 2026-09-14T23:10:16.259Z
+[KeyManager] Rotación automática aplicada a 3 nodo(s) activos
+[Socket] Cliente desconectado: ZHETWnv833yO9Fp7AAAB
+[Socket] Cliente conectado: zauEjNKKwhIR4I_5AAAD
+[KeyManager] Clave rotada: 2026-09-14T23:15:16.255Z
+[KeyManager] Rotación automática aplicada a 3 nodo(s) activos
+[KeyManager] Clave rotada: 2026-09-14T23:20:16.266Z
+[KeyManager] Rotación automática aplicada a 3 nodo(s) activos
+[Socket] Cliente desconectado: zauEjNKKwhIR4I_5AAAD
+[Socket] Cliente conectado: T7CbdKL5x1RY17Y6AAAF
+[KeyManager] Clave rotada: 2026-09-14T23:25:16.268Z
+[KeyManager] Rotación automática aplicada a 3 nodo(s) activos
+[Socket] Cliente desconectado: T7CbdKL5x1RY17Y6AAAF
+[KeyManager] Clave rotada: 2026-09-14T23:30:16.270Z
+[KeyManager] Rotación automática aplicada a 0 nodo(s) activos
+[KeyManager] Clave rotada: 2026-09-14T23:35:16.276Z
+[KeyManager] Rotación automática aplicada a 0 nodo(s) activos
+[KeyManager] Clave rotada: 2026-09-14T23:40:16.287Z
+[KeyManager] Rotación automática aplicada a 0 nodo(s) activos
+[KeyManager] Clave rotada: 2026-09-14T23:45:16.291Z
+[KeyManager] Rotación automática aplicada a 0 nodo(s) activos
+[KeyManager] Clave rotada: 2026-09-14T23:50:16.306Z
+[KeyManager] Rotación automática aplicada a 0 nodo(s) activos

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 /* Flash the same project on every board and select its role here. */
@@ -11,6 +12,7 @@ typedef struct {
     const char *hmac_key_hex; /* 64 hex chars, kept as ASCII for compatibility with Node's HMAC. */
     uint8_t mac[6];
     uint8_t lmk[16];           /* ESP-NOW unicast link key; unique for every peer. */
+    bool provisioned;          /* false until the physical board MAC is known. */
 } node_peer_config_t;
 
 extern const device_role_t DEVICE_ROLE;

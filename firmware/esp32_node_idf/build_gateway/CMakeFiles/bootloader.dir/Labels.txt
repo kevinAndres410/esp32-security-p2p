@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build_gateway/CMakeFiles/bootloader
+C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build_gateway/CMakeFiles/bootloader.rule
+C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build_gateway/CMakeFiles/bootloader-complete.rule
+C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build_gateway/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build_gateway/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build_gateway/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build_gateway/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build_gateway/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build_gateway/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+C:/Users/danie/OneDrive/Desktop/TESIS/esp32-security-p2p-main/firmware/esp32_node_idf/build_gateway/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

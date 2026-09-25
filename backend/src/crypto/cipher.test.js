@@ -27,12 +27,13 @@ describe('cipher.js - encrypt/decrypt', () => {
     expect(descifrado).toBe(original);
   });
 
-  test('el formato de salida es "ivHex:cifradoHex"', () => {
+  test('el formato de salida es "nonceHex:cifradoHex:tagHex"', () => {
     const cifrado = encrypt('mensaje de prueba', key);
     const partes = cifrado.split(':');
-    expect(partes).toHaveLength(2);
-    expect(partes[0]).toMatch(/^[0-9a-f]{32}$/); // IV de 16 bytes en hex
+    expect(partes).toHaveLength(3);
+    expect(partes[0]).toMatch(/^[0-9a-f]{24}$/); // nonce GCM de 12 bytes
     expect(partes[1]).toMatch(/^[0-9a-f]+$/);
+    expect(partes[2]).toMatch(/^[0-9a-f]{32}$/); // tag GCM de 16 bytes
   });
 
   test('cifrar el mismo texto dos veces produce salidas distintas (IV aleatorio)', () => {
@@ -72,13 +73,15 @@ describe('cipher.js - encrypt/decrypt', () => {
     expect(() => decrypt('esto-no-tiene-el-formato-correcto', key)).toThrow();
   });
 
-  test('descifrar con IV corrupto falla (mensaje de un solo bloque de 16 bytes)', () => {
-    // En AES-CBC, el IV solo afecta el primer bloque de texto plano. Con un
-    // mensaje corto (menor a 16 bytes) todo el padding PKCS7 vive en ese
-    // único bloque, así que un IV incorrecto sí rompe el padding y falla.
+  test('detecta cualquier alteración del texto cifrado', () => {
     const cifrado = encrypt('mensaje', key);
-    const [, cuerpoCifrado] = cifrado.split(':');
-    const ivCorrupto = '00'.repeat(16); // IV distinto al usado al cifrar
-    expect(() => decrypt(`${ivCorrupto}:${cuerpoCifrado}`, key)).toThrow();
+    const [nonce, cuerpoCifrado, tag] = cifrado.split(':');
+    const cuerpoCorrupto = `${cuerpoCifrado[0] === '0' ? '1' : '0'}${cuerpoCifrado.slice(1)}`;
+    expect(() => decrypt(`${nonce}:${cuerpoCorrupto}:${tag}`, key)).toThrow();
+  });
+
+  test('AAD incorrecto invalida el mensaje', () => {
+    const cifrado = encrypt('mensaje', key, 'esp32-001');
+    expect(() => decrypt(cifrado, key, 'esp32-002')).toThrow();
   });
 });

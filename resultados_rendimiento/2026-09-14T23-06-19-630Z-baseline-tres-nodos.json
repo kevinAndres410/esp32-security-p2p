@@ -1,0 +1,66 @@
+{
+  "label": "baseline-tres-nodos",
+  "distance": "misma-habitacion",
+  "startedAt": "2026-09-14T23:06:19.630Z",
+  "finishedAt": "2026-09-14T23:08:19.661Z",
+  "durationSeconds": 120.03,
+  "expectedDeviceCount": 3,
+  "totalReceivedPackets": 36,
+  "aggregateThroughputPacketsPerSecond": 0.2999,
+  "simultaneousPresencePercent": 88.89,
+  "devices": [
+    {
+      "deviceId": "esp32-001",
+      "mac": "20:50:0D:17:C8:D0",
+      "receivedPackets": 12,
+      "expectedPackets": null,
+      "missingPackets": null,
+      "lossPercent": null,
+      "latencyRttMs": null,
+      "interarrivalMs": {
+        "average": 9988.64,
+        "p95": 10162,
+        "maximum": 10162
+      },
+      "memoryBytes": null,
+      "cpuPercent": null
+    },
+    {
+      "deviceId": "esp32-002",
+      "mac": "04:B2:47:54:DA:90",
+      "receivedPackets": 12,
+      "expectedPackets": null,
+      "missingPackets": null,
+      "lossPercent": null,
+      "latencyRttMs": null,
+      "interarrivalMs": {
+        "average": 10007.73,
+        "p95": 10442,
+        "maximum": 10442
+      },
+      "memoryBytes": null,
+      "cpuPercent": null
+    },
+    {
+      "deviceId": "esp32-003",
+      "mac": "20:50:0D:17:EC:64",
+      "receivedPackets": 12,
+      "expectedPackets": null,
+      "missingPackets": null,
+      "lossPercent": null,
+      "latencyRttMs": null,
+      "interarrivalMs": {
+        "average": 9999,
+        "p95": 10159,
+        "maximum": 10159
+      },
+      "memoryBytes": null,
+      "cpuPercent": null
+    }
+  ],
+  "notes": [
+    "RTT incluye nodo, ESP-NOW, gateway, petición/respuesta HTTP del backend y ACK de regreso.",
+    "La pérdida exacta se calcula únicamente cuando el firmware reporta secuencia de heartbeat.",
+    "El consumo de energía requiere corriente y voltaje de un medidor externo; no se estima por software."
+  ]
+}

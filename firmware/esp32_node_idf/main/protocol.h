@@ -6,7 +6,7 @@
 #include "config.h"
 
 #define PROTOCOL_MAGIC 0x5044u /* "PD" */
-#define PROTOCOL_VERSION 1u
+#define PROTOCOL_VERSION 2u
 
 typedef enum {
     PROTOCOL_HEARTBEAT = 1,
@@ -22,7 +22,9 @@ typedef struct __attribute__((packed)) {
     uint32_t sequence;
     char device_id[24];
     uint8_t payload_len;
+    uint8_t nonce[12];
     uint8_t payload[ESPNOW_MAX_PAYLOAD];
+    uint8_t auth_tag[16];
     uint8_t hmac[32];
 } protocol_frame_t;
 
@@ -31,3 +33,4 @@ bool protocol_build(protocol_frame_t *frame, protocol_type_t type, uint32_t sequ
                     const char *device_id, const uint8_t *payload, size_t payload_len,
                     const char *hmac_key);
 bool protocol_verify(const protocol_frame_t *frame, size_t frame_len, const char *hmac_key);
+bool protocol_decrypt_payload(protocol_frame_t *frame, const char *aes_key_hex);

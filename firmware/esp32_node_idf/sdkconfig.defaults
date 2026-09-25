@@ -1,2 +1,7 @@
 # Select the actual chip with: idf.py set-target esp32  (or esp32c3).
 # ESP-NOW works on both; keeping the target out of defaults prevents conflicts.
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="4MB"
+CONFIG_SPI_FLASH_SUPPORT_BOYA_CHIP=y
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y

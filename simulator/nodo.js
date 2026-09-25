@@ -42,6 +42,7 @@ class NodoESP32 {
     this.socket.on('clave_rotada_nodo', ({ device_id, nuevaClave }) => {
       if (device_id !== this.deviceId) return;
       this.key = nuevaClave;
+      this.socket.emit('clave_rotada_ack', { device_id: this.deviceId });
       console.log(`[Nodo ${this.deviceId}] Clave actualizada por rotación del backend`);
     });
 
@@ -53,9 +54,12 @@ class NodoESP32 {
   }
 
   _iniciarHeartbeat() {
+    clearInterval(this.heartbeatInterval);
     this.heartbeatInterval = setInterval(() => {
       this.socket.emit('heartbeat', { device_id: this.deviceId });
     }, 10000);
+    // El simulador no debe mantener vivo por sí solo un proceso de pruebas o CLI.
+    this.heartbeatInterval.unref?.();
   }
 
   // ===== Comunicación P2P directa entre nodos simulados =====

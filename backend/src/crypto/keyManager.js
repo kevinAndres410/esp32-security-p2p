@@ -14,11 +14,21 @@ function rotateKey() {
   return { oldKey, newKey: currentKey };
 }
 
-function startRotation(intervalMinutes = 5) {
+function startRotation(intervalMinutes = 5, onRotation) {
+  if (!Number.isFinite(intervalMinutes) || intervalMinutes <= 0) {
+    throw new Error('El intervalo de rotación debe ser un número positivo de minutos');
+  }
   if (rotationInterval) clearInterval(rotationInterval);
   rotationInterval = setInterval(() => {
-    rotateKey();
+    const rotation = rotateKey();
+    if (typeof onRotation === 'function') {
+      Promise.resolve(onRotation(rotation)).catch((error) => {
+        console.error('[KeyManager] Falló la rotación automática:', error.message);
+      });
+    }
   }, intervalMinutes * 60 * 1000);
+  // El temporizador no debe impedir un cierre limpio del servidor o las pruebas.
+  if (typeof rotationInterval.unref === 'function') rotationInterval.unref();
   console.log(`[KeyManager] Rotación automática cada ${intervalMinutes} minutos`);
 }
 
