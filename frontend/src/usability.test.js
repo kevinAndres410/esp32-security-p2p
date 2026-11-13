@@ -108,6 +108,17 @@ test('tarea 5: muestra el evento reciente junto con su nodo', async () => {
   expect(screen.getByText('esp32-001')).toBeInTheDocument();
 });
 
+test('Tabla 8A XSS: un marcador HTML en el mensaje se muestra como texto', async () => {
+  const marker = '<img src=x onerror=alert(1)>';
+  getEvents.mockResolvedValue([{
+    id: 2, tipo: 'auth_failure', nodo_id: 'esp32-001',
+    mensaje: marker, creado_en: new Date().toISOString(),
+  }]);
+  const { container } = render(<AlertsEvents />);
+  expect(await screen.findByText(marker)).toBeInTheDocument();
+  expect(container.querySelector('img')).toBeNull();
+});
+
 test('tarea 6: rota la clave del nodo seleccionado y confirma la acción', async () => {
   rotateKey.mockResolvedValue({ ok: true });
   render(<KeyRotationSettings />);

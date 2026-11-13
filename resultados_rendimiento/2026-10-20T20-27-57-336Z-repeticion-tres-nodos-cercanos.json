@@ -1,0 +1,112 @@
+{
+  "label": "repeticion-tres-nodos-cercanos",
+  "distance": "misma-habitacion",
+  "startedAt": "2026-10-20T20:27:57.336Z",
+  "finishedAt": "2026-10-20T20:30:57.363Z",
+  "durationSeconds": 180.03,
+  "expectedDeviceCount": 3,
+  "totalReceivedPackets": 54,
+  "aggregateThroughputPacketsPerSecond": 0.3,
+  "simultaneousPresencePercent": 100,
+  "devices": [
+    {
+      "deviceId": "esp32-001",
+      "mac": "20:50:0D:17:C8:D0",
+      "receivedPackets": 18,
+      "expectedPackets": 18,
+      "missingPackets": 0,
+      "lossPercent": 0,
+      "rebootEpochs": 1,
+      "latencyRttMs": {
+        "minimum": 187,
+        "average": 438.78,
+        "p50": 423,
+        "p95": 699,
+        "maximum": 699
+      },
+      "interarrivalMs": {
+        "average": 9871.94,
+        "p95": 10360,
+        "maximum": 10360
+      },
+      "memoryBytes": {
+        "averageFree": 217444,
+        "minimumFree": 217444,
+        "minimumEver": 215588
+      },
+      "cpuPercent": {
+        "average": 0.05,
+        "p95": 0.05,
+        "maximum": 0.05
+      }
+    },
+    {
+      "deviceId": "esp32-002",
+      "mac": "38:18:2B:8A:16:6C",
+      "receivedPackets": 18,
+      "expectedPackets": 18,
+      "missingPackets": 0,
+      "lossPercent": 0,
+      "rebootEpochs": 1,
+      "latencyRttMs": {
+        "minimum": 150,
+        "average": 384.72,
+        "p50": 399,
+        "p95": 593,
+        "maximum": 593
+      },
+      "interarrivalMs": {
+        "average": 9904.12,
+        "p95": 10275,
+        "maximum": 10275
+      },
+      "memoryBytes": {
+        "averageFree": 217676,
+        "minimumFree": 217676,
+        "minimumEver": 215820
+      },
+      "cpuPercent": {
+        "average": 0.06,
+        "p95": 0.06,
+        "maximum": 0.06
+      }
+    },
+    {
+      "deviceId": "esp32-003",
+      "mac": "20:50:0D:17:EC:64",
+      "receivedPackets": 18,
+      "expectedPackets": 18,
+      "missingPackets": 0,
+      "lossPercent": 0,
+      "rebootEpochs": 1,
+      "latencyRttMs": {
+        "minimum": 160,
+        "average": 379.83,
+        "p50": 375,
+        "p95": 638,
+        "maximum": 638
+      },
+      "interarrivalMs": {
+        "average": 9896.65,
+        "p95": 10244,
+        "maximum": 10244
+      },
+      "memoryBytes": {
+        "averageFree": 217444,
+        "minimumFree": 217444,
+        "minimumEver": 215588
+      },
+      "cpuPercent": {
+        "average": 0.05,
+        "p95": 0.05,
+        "maximum": 0.05
+      }
+    }
+  ],
+  "notes": [
+    "RTT incluye nodo, ESP-NOW, gateway, petición/respuesta HTTP del backend y ACK de regreso.",
+    "La pérdida es de saltos de secuencia entre paquetes recibidos por cada arranque; no incluye pérdidas anteriores/posteriores ni durante reinicios.",
+    "La presencia simultánea se calcula cada segundo con una tolerancia de 25 s, tras 20 s de calentamiento.",
+    "El consumo de energía requiere corriente y voltaje de un medidor externo; no se estima por software."
+  ]
+}

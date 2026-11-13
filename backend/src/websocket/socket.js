@@ -10,7 +10,7 @@ const retosPendientes = new Map(); // socket.id -> reto generado
 
 function initSocket(server) {
   io = new Server(server, {
-    cors: { origin: 'http://localhost:3000', methods: ['GET', 'POST'] },
+    cors: { origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(','), methods: ['GET', 'POST'] },
   });
 
   io.use((socket, next) => {
@@ -18,6 +18,11 @@ function initSocket(server) {
     if (!token) return next(new Error('Token requerido'));
     try {
       socket.data.usuario = jwt.verify(token, process.env.JWT_SECRET || 'secreto_dev');
+      const user = db.prepare('SELECT rol, bloqueado, token_version FROM usuarios WHERE id = ?')
+        .get(socket.data.usuario.id);
+      if (!user || user.bloqueado || (socket.data.usuario.tokenVersion ?? 0) !== user.token_version) {
+        return next(new Error('Sesión revocada o cuenta bloqueada'));
+      }
       next();
     } catch {
       next(new Error('Token inválido o expirado'));
@@ -30,11 +35,23 @@ function initSocket(server) {
 
     socket.emit('estado_red', getEstadoRed(socket.data.usuario.id));
 
+    const canManage = () => {
+      const user = db.prepare('SELECT rol, bloqueado, token_version FROM usuarios WHERE id = ?')
+        .get(socket.data.usuario.id);
+      return user && !user.bloqueado &&
+        (socket.data.usuario.tokenVersion ?? 0) === user.token_version &&
+        ['avanzado', 'master_admin'].includes(user.rol);
+    };
+
     socket.on('rotar_clave', () => {
-      if (!['avanzado', 'administrador'].includes(socket.data.usuario?.rol)) return socket.emit('permiso_denegado');
+      if (!canManage()) return socket.emit('permiso_denegado');
       // Carga diferida para evitar un ciclo de imports socket <-> servicio.
       const { rotateActiveNodeKeys } = require('../services/keyRotation.service');
       const rotations = rotateActiveNodeKeys('manual');
+      db.prepare(`INSERT INTO admin_audit_log
+        (actor_user_id, action, entity_type, entity_id, metadata_json)
+        VALUES (?, 'key.rotated_all', 'nodes', 'all', ?)`)
+        .run(socket.data.usuario.id, JSON.stringify({ count: rotations.length, transport: 'socket' }));
       io.emit('clave_rotada', { nodosRotados: rotations.length, timestamp: new Date().toISOString() });
       broadcastEstadoRed();
       console.log(`[Socket] Claves rotadas manualmente para ${rotations.length} nodo(s)`);
@@ -42,24 +59,36 @@ function initSocket(server) {
 
     // Gestión de nodos desde la UI (Sprint 3): registrar / bloquear / eliminar
     socket.on('nodo_bloquear', (data) => {
-      if (!['avanzado', 'administrador'].includes(socket.data.usuario?.rol)) return socket.emit('permiso_denegado');
+      if (!canManage()) return socket.emit('permiso_denegado');
       db.prepare(`UPDATE nodos SET estado = 'bloqueado' WHERE device_id = ?`).run(data.device_id);
       db.prepare(`INSERT INTO eventos (tipo, mensaje, nodo_id) VALUES (?, ?, ?)`)
         .run('bloqueo', `Nodo ${data.device_id} bloqueado manualmente`, data.device_id);
+      db.prepare(`INSERT INTO admin_audit_log
+        (actor_user_id, action, entity_type, entity_id, metadata_json)
+        VALUES (?, 'node.blocked', 'node', ?, '{"transport":"socket"}')`)
+        .run(socket.data.usuario.id, data.device_id);
       broadcastEstadoRed();
     });
 
     socket.on('nodo_desbloquear', (data) => {
-      if (!['avanzado', 'administrador'].includes(socket.data.usuario?.rol)) return socket.emit('permiso_denegado');
+      if (!canManage()) return socket.emit('permiso_denegado');
       db.prepare(`UPDATE nodos SET estado = 'activo' WHERE device_id = ? AND admission_status = 'approved'`).run(data.device_id);
+      db.prepare(`INSERT INTO admin_audit_log
+        (actor_user_id, action, entity_type, entity_id, metadata_json)
+        VALUES (?, 'node.unblocked', 'node', ?, '{"transport":"socket"}')`)
+        .run(socket.data.usuario.id, data.device_id);
       broadcastEstadoRed();
     });
 
     socket.on('nodo_eliminar', (data) => {
-      if (!['avanzado', 'administrador'].includes(socket.data.usuario?.rol)) return socket.emit('permiso_denegado');
+      if (!canManage()) return socket.emit('permiso_denegado');
       db.prepare(`DELETE FROM nodos WHERE device_id = ?`).run(data.device_id);
       db.prepare(`INSERT INTO eventos (tipo, mensaje, nodo_id) VALUES (?, ?, ?)`)
         .run('eliminacion', `Nodo ${data.device_id} eliminado del sistema`, data.device_id);
+      db.prepare(`INSERT INTO admin_audit_log
+        (actor_user_id, action, entity_type, entity_id, metadata_json)
+        VALUES (?, 'node.deleted', 'node', ?, '{"transport":"socket"}')`)
+        .run(socket.data.usuario.id, data.device_id);
       broadcastEstadoRed();
     });
 
@@ -140,7 +169,7 @@ function initSocket(server) {
 
 function getEstadoRed(userId) {
   const role = userId ? db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(userId)?.rol : 'avanzado';
-  const advanced = ['avanzado', 'administrador'].includes(role);
+  const advanced = ['avanzado', 'master_admin'].includes(role);
   const nodos = db.prepare(`SELECT id, device_id, mac_address, descripcion,
     CASE
       WHEN estado IN ('bloqueado', 'pendiente') THEN estado
@@ -150,7 +179,8 @@ function getEstadoRed(userId) {
     END AS estado,
     CASE WHEN clave_actual IS NULL THEN NULL ELSE substr(clave_actual, 1, 8) || '...' END AS clave_actual,
     ultima_actividad, registrado_en, clave_rotada_en FROM nodos
-    WHERE (? = 1 OR device_id IN (SELECT d.device_id FROM kit_devices d
+    WHERE admission_status != 'revoked' AND
+    (? = 1 OR device_id IN (SELECT d.device_id FROM kit_devices d
       JOIN kits k ON k.id = d.kit_id WHERE k.owner_user_id = ?))`).all(advanced ? 1 : 0, userId || 0);
   const latestSync = nodos.filter((node) => node.estado === 'activo')
     .map((node) => node.ultima_actividad).sort().at(-1) || null;
@@ -183,6 +213,12 @@ function getEstadoRed(userId) {
 function broadcastEstadoRed() {
   if (!io) return;
   for (const socket of io.sockets.sockets.values()) {
+    const user = db.prepare('SELECT bloqueado, token_version FROM usuarios WHERE id = ?')
+      .get(socket.data.usuario?.id);
+    if (!user || user.bloqueado || (socket.data.usuario.tokenVersion ?? 0) !== user.token_version) {
+      socket.disconnect(true);
+      continue;
+    }
     socket.emit('estado_red', getEstadoRed(socket.data.usuario?.id));
   }
 }
@@ -207,7 +243,7 @@ function emitAlerta({ nodo_id, tipo, mensaje }) {
   for (const socket of io.sockets.sockets.values()) {
     const userId = socket.data.usuario?.id;
     const role = db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(userId)?.rol;
-    const advanced = ['avanzado', 'administrador'].includes(role);
+    const advanced = ['avanzado', 'master_admin'].includes(role);
     const owned = db.prepare(`SELECT 1 AS ok FROM kit_devices d JOIN kits k ON k.id = d.kit_id
       WHERE d.device_id = ? AND k.owner_user_id = ?`).get(nodo_id, userId);
     if (advanced || owned) socket.emit('alerta_nueva', { nodo_id, tipo, mensaje, timestamp: new Date().toISOString() });

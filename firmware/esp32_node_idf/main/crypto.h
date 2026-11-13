@@ -15,3 +15,8 @@ bool crypto_aes256_gcm_decrypt(const char *key_hex, const uint8_t nonce[12],
                                const uint8_t *aad, size_t aad_len,
                                const uint8_t *ciphertext, size_t ciphertext_len,
                                const uint8_t tag[16], uint8_t *plaintext);
+bool crypto_aes256_gcm_decrypt_buffer(const char *key_hex, const uint8_t nonce[12],
+                                      const uint8_t *aad, size_t aad_len,
+                                      const uint8_t *ciphertext, size_t ciphertext_len,
+                                      const uint8_t tag[16], uint8_t *plaintext,
+                                      size_t plaintext_capacity);

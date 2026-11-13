@@ -14,3 +14,5 @@ typedef struct {
 bool espnow_transport_init(bool gateway_role);
 bool espnow_transport_send(const uint8_t destination[6], const protocol_frame_t *frame);
 bool espnow_transport_receive(espnow_received_t *received, uint32_t timeout_ms);
+bool espnow_transport_replace_peers(const node_peer_config_t *old_peers, size_t old_count,
+                                    const node_peer_config_t *new_peers, size_t new_count);

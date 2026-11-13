@@ -2,6 +2,7 @@
 
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -24,30 +25,74 @@
 static const char *TAG = "gateway";
 static EventGroupHandle_t wifi_events;
 #define WIFI_CONNECTED_BIT BIT0
+#define MAX_GATEWAY_PEERS 7
 static uint32_t gateway_sequence;
-static char active_keys[16][65];
-static char pending_keys[16][65];
-static bool key_rotation_pending[16];
-static TickType_t discovery_last_report[16];
+static node_peer_config_t runtime_peers[MAX_GATEWAY_PEERS];
+static char runtime_ids[MAX_GATEWAY_PEERS][24];
+static char active_keys[MAX_GATEWAY_PEERS][65];
+static char pending_keys[MAX_GATEWAY_PEERS][65];
+static bool key_rotation_pending[MAX_GATEWAY_PEERS];
+static TickType_t discovery_last_report[MAX_GATEWAY_PEERS];
+static size_t runtime_peer_count;
+static uint32_t applied_config_version;
+static bool dynamic_active;
+static uint8_t applied_snapshot_digest[32];
 
-static size_t peer_index(const node_peer_config_t *peer) { return (size_t)(peer - GATEWAY_PEERS); }
+static bool persist_dynamic_snapshot(void);
+
+static size_t peer_index(const node_peer_config_t *peer) { return (size_t)(peer - runtime_peers); }
 static const char *peer_key(const node_peer_config_t *peer) { return active_keys[peer_index(peer)]; }
+
+static void initialize_static_peers(void) {
+    runtime_peer_count = GATEWAY_PEER_COUNT <= MAX_GATEWAY_PEERS ? GATEWAY_PEER_COUNT : 0;
+    for (size_t i = 0; i < runtime_peer_count; ++i) {
+        runtime_peers[i] = GATEWAY_PEERS[i];
+        strncpy(runtime_ids[i], GATEWAY_PEERS[i].device_id, sizeof(runtime_ids[i]) - 1);
+        runtime_ids[i][sizeof(runtime_ids[i]) - 1] = '\0';
+        runtime_peers[i].device_id = runtime_ids[i];
+        runtime_peers[i].hmac_key_hex = active_keys[i];
+    }
+}
 
 static void load_gateway_keys(void) {
     nvs_handle_t nvs;
     if (nvs_open("gateway_keys", NVS_READWRITE, &nvs) != ESP_OK) return;
-    for (size_t i = 0; i < GATEWAY_PEER_COUNT; ++i) {
-        if (!GATEWAY_PEERS[i].provisioned) continue;
+    bool changed = false;
+    for (size_t i = 0; i < runtime_peer_count; ++i) {
+        const node_peer_config_t *peer = &runtime_peers[i];
+        if (!peer->provisioned) continue;
         strncpy(active_keys[i], GATEWAY_PEERS[i].hmac_key_hex, 64);
         active_keys[i][64] = '\0';
-        char name[16]; size_t length = sizeof(active_keys[i]);
-        snprintf(name, sizeof(name), "key_%u", (unsigned)i);
-        (void)nvs_get_str(nvs, name, active_keys[i], &length);
+        char key_name[16], mac_name[16];
+        snprintf(key_name, sizeof(key_name), "key_%u", (unsigned)i);
+        snprintf(mac_name, sizeof(mac_name), "mac_%u", (unsigned)i);
+        uint8_t stored_mac[6];
+        size_t mac_length = sizeof(stored_mac);
+        bool has_mac = nvs_get_blob(nvs, mac_name, stored_mac, &mac_length) == ESP_OK &&
+                       mac_length == sizeof(stored_mac);
+        bool replaced = has_mac && memcmp(stored_mac, peer->mac, sizeof(stored_mac)) != 0;
+        if (!replaced && (has_mac || !peer->reset_legacy_key)) {
+            size_t key_length = sizeof(active_keys[i]);
+            (void)nvs_get_str(nvs, key_name, active_keys[i], &key_length);
+        } else {
+            (void)nvs_set_str(nvs, key_name, active_keys[i]);
+            changed = true;
+            ESP_LOGI(TAG, "Provisioning key for replacement %s", peer->device_id);
+        }
+        if (!has_mac || replaced) {
+            (void)nvs_set_blob(nvs, mac_name, peer->mac, sizeof(peer->mac));
+            changed = true;
+        }
     }
+    if (changed) (void)nvs_commit(nvs);
     nvs_close(nvs);
 }
 
 static void save_gateway_key(size_t index) {
+    if (dynamic_active) {
+        if (!persist_dynamic_snapshot()) ESP_LOGE(TAG, "No se pudo conservar la clave rotada");
+        return;
+    }
     nvs_handle_t nvs; char name[16];
     if (nvs_open("gateway_keys", NVS_READWRITE, &nvs) != ESP_OK) return;
     snprintf(name, sizeof(name), "key_%u", (unsigned)index);
@@ -58,8 +103,8 @@ static void save_gateway_key(size_t index) {
 
 static const node_peer_config_t *find_peer(const char *device_id, const uint8_t mac[6]) {
     if (strnlen(device_id, sizeof(((protocol_frame_t *)0)->device_id)) == sizeof(((protocol_frame_t *)0)->device_id)) return NULL;
-    for (size_t i = 0; i < GATEWAY_PEER_COUNT; ++i) {
-        const node_peer_config_t *peer = &GATEWAY_PEERS[i];
+    for (size_t i = 0; i < runtime_peer_count; ++i) {
+        const node_peer_config_t *peer = &runtime_peers[i];
         if (!peer->provisioned) continue;
         if (strcmp(peer->device_id, device_id) == 0 && memcmp(peer->mac, mac, 6) == 0) return peer;
     }
@@ -95,12 +140,13 @@ static bool connect_wifi(void) {
                                 pdMS_TO_TICKS(30000)) & WIFI_CONNECTED_BIT) != 0;
 }
 
-typedef struct { char body[1024]; size_t length; } http_response_t;
+typedef struct { char *body; size_t capacity; size_t length; } http_response_t;
 
 static esp_err_t http_event_handler(esp_http_client_event_t *event) {
     http_response_t *response = event->user_data;
     if (event->event_id == HTTP_EVENT_ON_DATA && response && event->data_len > 0) {
-        size_t writable = sizeof(response->body) - response->length - 1;
+        size_t writable = response->capacity > response->length + 1
+            ? response->capacity - response->length - 1 : 0;
         size_t copy = event->data_len < (int)writable ? (size_t)event->data_len : writable;
         if (copy) {
             memcpy(response->body + response->length, event->data, copy);
@@ -109,6 +155,171 @@ static esp_err_t http_event_handler(esp_http_client_event_t *event) {
         }
     }
     return ESP_OK;
+}
+
+static int hex_digit(char value) {
+    if (value >= '0' && value <= '9') return value - '0';
+    if (value >= 'a' && value <= 'f') return value - 'a' + 10;
+    if (value >= 'A' && value <= 'F') return value - 'A' + 10;
+    return -1;
+}
+
+static bool decode_hex(const char *source, uint8_t *output, size_t count) {
+    if (!source || strlen(source) != count * 2) return false;
+    for (size_t i = 0; i < count; ++i) {
+        int high = hex_digit(source[i * 2]), low = hex_digit(source[i * 2 + 1]);
+        if (high < 0 || low < 0) return false;
+        output[i] = (uint8_t)((high << 4) | low);
+    }
+    return true;
+}
+
+static bool save_snapshot_json(const char *snapshot) {
+    nvs_handle_t nvs;
+    if (nvs_open("gw_registry", NVS_READWRITE, &nvs) != ESP_OK) return false;
+    esp_err_t result = nvs_set_str(nvs, "snapshot", snapshot);
+    if (result == ESP_OK) result = nvs_commit(nvs);
+    nvs_close(nvs);
+    return result == ESP_OK;
+}
+
+static bool persist_dynamic_snapshot(void) {
+    cJSON *root = cJSON_CreateObject();
+    cJSON *peers = cJSON_AddArrayToObject(root, "peers");
+    cJSON_AddNumberToObject(root, "version", applied_config_version);
+    for (size_t i = 0; i < runtime_peer_count; ++i) {
+        const node_peer_config_t *peer = &runtime_peers[i];
+        char mac[18], lmk[33];
+        static const char hex[] = "0123456789abcdef";
+        snprintf(mac, sizeof(mac), "%02X:%02X:%02X:%02X:%02X:%02X",
+            peer->mac[0], peer->mac[1], peer->mac[2], peer->mac[3], peer->mac[4], peer->mac[5]);
+        for (size_t j = 0; j < 16; ++j) {
+            lmk[j * 2] = hex[peer->lmk[j] >> 4];
+            lmk[j * 2 + 1] = hex[peer->lmk[j] & 15];
+        }
+        lmk[32] = '\0';
+        cJSON *entry = cJSON_CreateObject();
+        cJSON_AddStringToObject(entry, "deviceId", peer->device_id);
+        cJSON_AddStringToObject(entry, "mac", mac);
+        cJSON_AddStringToObject(entry, "key", active_keys[i]);
+        cJSON_AddStringToObject(entry, "lmk", lmk);
+        cJSON_AddItemToArray(peers, entry);
+    }
+    char *snapshot = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!snapshot) return false;
+    bool saved = save_snapshot_json(snapshot);
+    if (saved) (void)crypto_hmac_sha256(GATEWAY_CONTROL_KEY_HEX,
+        (const uint8_t *)snapshot, strlen(snapshot), applied_snapshot_digest);
+    cJSON_free(snapshot);
+    return saved;
+}
+
+static bool apply_snapshot(const char *snapshot, bool persist) {
+    cJSON *root = cJSON_Parse(snapshot);
+    cJSON *version = root ? cJSON_GetObjectItemCaseSensitive(root, "version") : NULL;
+    cJSON *entries = root ? cJSON_GetObjectItemCaseSensitive(root, "peers") : NULL;
+    if (!cJSON_IsNumber(version) || version->valuedouble < 1 ||
+        version->valuedouble > UINT32_MAX || !cJSON_IsArray(entries) ||
+        cJSON_GetArraySize(entries) > MAX_GATEWAY_PEERS) { cJSON_Delete(root); return false; }
+    size_t count = (size_t)cJSON_GetArraySize(entries);
+    node_peer_config_t proposed[MAX_GATEWAY_PEERS] = {0};
+    char ids[MAX_GATEWAY_PEERS][24] = {{0}}, keys[MAX_GATEWAY_PEERS][65] = {{0}};
+    bool valid = true;
+    for (size_t i = 0; i < count && valid; ++i) {
+        cJSON *entry = cJSON_GetArrayItem(entries, (int)i);
+        cJSON *id = cJSON_GetObjectItemCaseSensitive(entry, "deviceId");
+        cJSON *mac = cJSON_GetObjectItemCaseSensitive(entry, "mac");
+        cJSON *key = cJSON_GetObjectItemCaseSensitive(entry, "key");
+        cJSON *lmk = cJSON_GetObjectItemCaseSensitive(entry, "lmk");
+        cJSON *previous_key = cJSON_GetObjectItemCaseSensitive(entry, "previousKey");
+        if (!cJSON_IsString(id) || !cJSON_IsString(mac) || !cJSON_IsString(key) ||
+            !cJSON_IsString(lmk) || !id->valuestring[0] || strlen(id->valuestring) >= sizeof(ids[i]) ||
+            strlen(key->valuestring) != 64 || strlen(mac->valuestring) != 17 ||
+            (previous_key && (!cJSON_IsString(previous_key) ||
+                strlen(previous_key->valuestring) != 64))) { valid = false; break; }
+        for (size_t j = 0; j < 64; ++j) if (hex_digit(key->valuestring[j]) < 0) valid = false;
+        if (previous_key) for (size_t j = 0; j < 64; ++j)
+            if (hex_digit(previous_key->valuestring[j]) < 0) valid = false;
+        for (size_t j = 0; j < i; ++j)
+            if (strcmp(ids[j], id->valuestring) == 0) valid = false;
+        if (!valid) break;
+        for (size_t j = 0; j < 6; ++j) {
+            int high = hex_digit(mac->valuestring[j * 3]);
+            int low = hex_digit(mac->valuestring[j * 3 + 1]);
+            if (high < 0 || low < 0 || (j < 5 && mac->valuestring[j * 3 + 2] != ':')) {
+                valid = false;
+                break;
+            }
+            proposed[i].mac[j] = (uint8_t)((high << 4) | low);
+        }
+        valid = valid && decode_hex(lmk->valuestring, proposed[i].lmk, 16);
+        for (size_t j = 0; j < i; ++j)
+            if (memcmp(proposed[j].mac, proposed[i].mac, 6) == 0) valid = false;
+        if (!valid) break;
+        strcpy(ids[i], id->valuestring);
+        strcpy(keys[i], key->valuestring);
+        if (previous_key) {
+            for (size_t j = 0; j < runtime_peer_count; ++j) {
+                if (strcmp(runtime_peers[j].device_id, ids[i]) == 0 &&
+                    memcmp(runtime_peers[j].mac, proposed[i].mac, 6) == 0) {
+                    if (strcmp(active_keys[j], key->valuestring) != 0 &&
+                        strcmp(active_keys[j], previous_key->valuestring) != 0) {
+                        valid = false;
+                    } else {
+                        strcpy(keys[i], active_keys[j]);
+                    }
+                    break;
+                }
+            }
+        }
+        if (!valid) break;
+        proposed[i].device_id = ids[i];
+        proposed[i].hmac_key_hex = keys[i];
+        proposed[i].provisioned = true;
+    }
+    if (!valid) { cJSON_Delete(root); return false; }
+    if (!espnow_transport_replace_peers(runtime_peers, runtime_peer_count, proposed, count)) {
+        cJSON_Delete(root); return false;
+    }
+    if (persist && !save_snapshot_json(snapshot)) {
+        (void)espnow_transport_replace_peers(proposed, count, runtime_peers, runtime_peer_count);
+        cJSON_Delete(root); return false;
+    }
+    for (size_t i = 0; i < count; ++i) {
+        strcpy(runtime_ids[i], ids[i]);
+        strcpy(active_keys[i], keys[i]);
+        runtime_peers[i] = proposed[i];
+        runtime_peers[i].device_id = runtime_ids[i];
+        runtime_peers[i].hmac_key_hex = active_keys[i];
+    }
+    runtime_peer_count = count;
+    applied_config_version = (uint32_t)version->valuedouble;
+    dynamic_active = true;
+    (void)crypto_hmac_sha256(GATEWAY_CONTROL_KEY_HEX,
+        (const uint8_t *)snapshot, strlen(snapshot), applied_snapshot_digest);
+    memset(key_rotation_pending, 0, sizeof(key_rotation_pending));
+    memset(discovery_last_report, 0, sizeof(discovery_last_report));
+    cJSON_Delete(root);
+    ESP_LOGI(TAG, "Configuración v%" PRIu32 " aplicada con %u nodos",
+        applied_config_version, (unsigned)count);
+    return true;
+}
+
+static void load_cached_snapshot(void) {
+    if (!GATEWAY_CONTROL_KEY_HEX || strlen(GATEWAY_CONTROL_KEY_HEX) != 64) return;
+    nvs_handle_t nvs;
+    if (nvs_open("gw_registry", NVS_READONLY, &nvs) != ESP_OK) return;
+    size_t length = 0;
+    if (nvs_get_str(nvs, "snapshot", NULL, &length) == ESP_OK && length > 0 && length <= 4096) {
+        char *snapshot = malloc(length);
+        if (snapshot) {
+            if (nvs_get_str(nvs, "snapshot", snapshot, &length) == ESP_OK &&
+                !apply_snapshot(snapshot, false)) ESP_LOGW(TAG, "Configuración guardada inválida");
+            free(snapshot);
+        }
+    }
+    nvs_close(nvs);
 }
 
 static bool send_to_node(const node_peer_config_t *peer, protocol_type_t type, const char *payload) {
@@ -162,7 +373,8 @@ static void forward_to_server(const node_peer_config_t *peer, const protocol_fra
     char signature[65];
     if (!crypto_hmac_hex(peer_key(peer), signed_value, signature)) { cJSON_free(body); return; }
 
-    http_response_t response = {0};
+    char response_body[1024] = {0};
+    http_response_t response = { .body = response_body, .capacity = sizeof(response_body) };
     esp_http_client_config_t config = { .url = UPSTREAM_URL, .method = HTTP_METHOD_POST,
                                         .event_handler = http_event_handler, .user_data = &response,
                                         .crt_bundle_attach = esp_crt_bundle_attach,
@@ -240,17 +452,127 @@ static void report_candidate(const node_peer_config_t *peer, const char *transpo
     cJSON_free(body);
 }
 
+static bool control_url(char url[256], const char *suffix) {
+    const char *marker = strstr(UPSTREAM_URL, "/api/gateway/sync");
+    if (!marker) return false;
+    size_t prefix = (size_t)(marker - UPSTREAM_URL);
+    if (prefix + strlen(suffix) + 1 > 256) return false;
+    memcpy(url, UPSTREAM_URL, prefix);
+    strcpy(url + prefix, suffix);
+    return true;
+}
+
+static void acknowledge_config(uint32_t version, const char *nonce) {
+    char url[256], signed_value[128], signature[65], body[48];
+    if (!control_url(url, "/api/gateway/config/ack")) return;
+    snprintf(signed_value, sizeof(signed_value), "ack:%s:%" PRIu32 ":%s", DEVICE_ID, version, nonce);
+    if (!crypto_hmac_hex(GATEWAY_CONTROL_KEY_HEX, signed_value, signature)) return;
+    snprintf(body, sizeof(body), "{\"version\":%" PRIu32 "}", version);
+    esp_http_client_config_t config = { .url = url, .method = HTTP_METHOD_POST,
+        .crt_bundle_attach = esp_crt_bundle_attach, .timeout_ms = 3000 };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (!client) return;
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+    esp_http_client_set_header(client, "x-gateway-id", DEVICE_ID);
+    esp_http_client_set_header(client, "x-gateway-nonce", nonce);
+    esp_http_client_set_header(client, "x-gateway-signature", signature);
+    esp_http_client_set_post_field(client, body, strlen(body));
+    esp_err_t result = esp_http_client_perform(client);
+    int status = esp_http_client_get_status_code(client);
+    esp_http_client_cleanup(client);
+    if (result != ESP_OK || status != 200)
+        ESP_LOGW(TAG, "Confirmación de configuración aplazada: HTTP %d", status);
+}
+
+static void poll_config(void) {
+    char url[256], nonce[33], signed_value[128], signature[65];
+    if (!control_url(url, "/api/gateway/config")) return;
+    snprintf(nonce, sizeof(nonce), "%08" PRIx32 "%08" PRIx32 "%08" PRIx32 "%08" PRIx32,
+        esp_random(), esp_random(), esp_random(), esp_random());
+    snprintf(signed_value, sizeof(signed_value), "config:%s:%s", DEVICE_ID, nonce);
+    if (!crypto_hmac_hex(GATEWAY_CONTROL_KEY_HEX, signed_value, signature)) return;
+    char *body = calloc(1, 8192);
+    if (!body) return;
+    http_response_t response = { .body = body, .capacity = 8192 };
+    esp_http_client_config_t config = { .url = url, .method = HTTP_METHOD_GET,
+        .event_handler = http_event_handler, .user_data = &response,
+        .crt_bundle_attach = esp_crt_bundle_attach, .timeout_ms = 3000 };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (!client) { free(body); return; }
+    esp_http_client_set_header(client, "x-gateway-id", DEVICE_ID);
+    esp_http_client_set_header(client, "x-gateway-nonce", nonce);
+    esp_http_client_set_header(client, "x-gateway-signature", signature);
+    esp_err_t result = esp_http_client_perform(client);
+    int status = esp_http_client_get_status_code(client);
+    esp_http_client_cleanup(client);
+    if (result != ESP_OK || status != 200) { free(body); return; }
+    cJSON *outer = cJSON_Parse(body);
+    cJSON *version = outer ? cJSON_GetObjectItemCaseSensitive(outer, "version") : NULL;
+    cJSON *iv_hex = outer ? cJSON_GetObjectItemCaseSensitive(outer, "iv") : NULL;
+    cJSON *tag_hex = outer ? cJSON_GetObjectItemCaseSensitive(outer, "tag") : NULL;
+    cJSON *cipher_hex = outer ? cJSON_GetObjectItemCaseSensitive(outer, "ciphertext") : NULL;
+    bool valid = cJSON_IsNumber(version) && version->valuedouble >= 1 &&
+        version->valuedouble <= UINT32_MAX && cJSON_IsString(iv_hex) &&
+        cJSON_IsString(tag_hex) && cJSON_IsString(cipher_hex);
+    size_t cipher_length = valid ? strlen(cipher_hex->valuestring) / 2 : 0;
+    uint8_t iv[12], tag[16];
+    valid = valid && cipher_length > 0 && cipher_length <= 4096 &&
+        strlen(cipher_hex->valuestring) == cipher_length * 2 &&
+        decode_hex(iv_hex->valuestring, iv, sizeof(iv)) &&
+        decode_hex(tag_hex->valuestring, tag, sizeof(tag));
+    uint8_t *ciphertext = valid ? malloc(cipher_length) : NULL;
+    uint8_t *plaintext = valid ? malloc(cipher_length + 1) : NULL;
+    if (valid && ciphertext && plaintext) {
+        char aad[128];
+        snprintf(aad, sizeof(aad), "%s:%s:%" PRIu32,
+            DEVICE_ID, nonce, (uint32_t)version->valuedouble);
+        valid = decode_hex(cipher_hex->valuestring, ciphertext, cipher_length) &&
+            crypto_aes256_gcm_decrypt_buffer(GATEWAY_CONTROL_KEY_HEX, iv,
+                (const uint8_t *)aad, strlen(aad), ciphertext, cipher_length, tag,
+                plaintext, cipher_length);
+        if (valid) {
+            plaintext[cipher_length] = '\0';
+            uint32_t desired_version = (uint32_t)version->valuedouble;
+            cJSON *inner = cJSON_Parse((const char *)plaintext);
+            cJSON *inner_version = inner ? cJSON_GetObjectItemCaseSensitive(inner, "version") : NULL;
+            bool matching = cJSON_IsNumber(inner_version) &&
+                inner_version->valuedouble == (double)desired_version;
+            cJSON_Delete(inner);
+            uint8_t desired_digest[32];
+            bool unchanged = matching && dynamic_active && desired_version == applied_config_version &&
+                crypto_hmac_sha256(GATEWAY_CONTROL_KEY_HEX, plaintext, cipher_length, desired_digest) &&
+                crypto_constant_time_equal(desired_digest, applied_snapshot_digest, sizeof(desired_digest));
+            if (matching && (unchanged || apply_snapshot((const char *)plaintext, true)))
+                acknowledge_config(desired_version, nonce);
+        }
+    }
+    free(ciphertext);
+    free(plaintext);
+    cJSON_Delete(outer);
+    free(body);
+}
+
 void gateway_run(void) {
     gateway_sequence = esp_random();
-    if (GATEWAY_PEER_COUNT > 16) { ESP_LOGE(TAG, "Too many configured peers"); return; }
+    if (GATEWAY_PEER_COUNT > MAX_GATEWAY_PEERS) { ESP_LOGE(TAG, "Too many configured peers"); return; }
+    initialize_static_peers();
     load_gateway_keys();
+    load_cached_snapshot();
     if (!connect_wifi()) ESP_LOGW(TAG, "Wi-Fi unavailable; receiving ESP-NOW only");
+    TickType_t last_config_poll = 0;
     while (true) {
+        TickType_t now = xTaskGetTickCount();
+        if (GATEWAY_CONTROL_KEY_HEX && strlen(GATEWAY_CONTROL_KEY_HEX) == 64 &&
+            wifi_events && (xEventGroupGetBits(wifi_events) & WIFI_CONNECTED_BIT) &&
+            (!last_config_poll || now - last_config_poll >= pdMS_TO_TICKS(10000))) {
+            last_config_poll = now;
+            poll_config();
+        }
         uint8_t ble_mac[6];
         while (ble_discovery_receive(ble_mac)) {
-            for (size_t i = 0; i < GATEWAY_PEER_COUNT; ++i) {
-                if (GATEWAY_PEERS[i].provisioned && memcmp(GATEWAY_PEERS[i].mac, ble_mac, 6) == 0)
-                    report_candidate(&GATEWAY_PEERS[i], "ble", esp_random());
+            for (size_t i = 0; i < runtime_peer_count; ++i) {
+                if (runtime_peers[i].provisioned && memcmp(runtime_peers[i].mac, ble_mac, 6) == 0)
+                    report_candidate(&runtime_peers[i], "ble", esp_random());
             }
         }
         espnow_received_t received;

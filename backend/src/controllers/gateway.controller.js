@@ -34,6 +34,12 @@ function sync(req, res) {
 
   db.prepare(`UPDATE nodos SET estado = 'activo', ultima_actividad = CURRENT_TIMESTAMP WHERE device_id = ?`)
     .run(deviceId);
+  db.prepare(`UPDATE kits SET gateway_last_seen_at = CURRENT_TIMESTAMP
+    WHERE id IN (SELECT kit_id FROM kit_devices WHERE device_id = ?)`).run(deviceId);
+  db.prepare(`UPDATE kit_device_operations SET status = 'online', first_seen_at = CURRENT_TIMESTAMP
+    WHERE device_id = ? AND status = 'awaiting_telemetry' AND action IN ('add', 'replace')
+      AND config_version <= (SELECT applied_version FROM kits
+        WHERE kits.id = kit_device_operations.kit_id)`).run(deviceId);
 
   const telemetry = parsePerformancePayload(payload);
   db.prepare(`INSERT OR IGNORE INTO muestras_rendimiento

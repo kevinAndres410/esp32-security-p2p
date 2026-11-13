@@ -1,2 +1,74 @@
-firmware/esp32_node_idf/build_blecheck/
-firmware/esp32_node_idf/artifacts/blecheck/
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+**/kit-manifest*.json
+firmware/esp32_node_idf/main/config.c
+artifacts/
+
+# Dependencias y productos de JavaScript
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+*.tsbuildinfo
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Datos de ejecución y bases de datos locales
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.db
+*.db-*
+*.db3
+
+# ESP-IDF: artefactos y configuración específica de la máquina
+firmware/esp32_node_idf/build*/
+firmware/esp32_node_idf/artifacts/
+firmware/esp32_node_idf/managed_components/
+firmware/esp32_node_idf/sdkconfig
+firmware/esp32_node_idf/sdkconfig.old
+firmware/esp32_node_idf/sdkconfig.*.old
+firmware/espnow_lab_probe/build/
+firmware/espnow_lab_probe/managed_components/
+firmware/espnow_lab_probe/sdkconfig
+firmware/espnow_lab_probe/sdkconfig.old
+firmware/espnow_lab_probe/sdkconfig.*.old
+firmware/espnow_lab_probe/evidence/
+
+# Entornos y cachés de Python
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Salidas temporales y documentos generados
+tmp/
+output/
+.codex_tmp_*
+**/.test-tmp/
+
+# Archivos locales del sistema y del editor
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~

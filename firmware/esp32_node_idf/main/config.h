@@ -13,6 +13,7 @@ typedef struct {
     uint8_t mac[6];
     uint8_t lmk[16];           /* ESP-NOW unicast link key; unique for every peer. */
     bool provisioned;          /* false until the physical board MAC is known. */
+    bool reset_legacy_key;     /* One-time migration when replacing a board without an NVS MAC marker. */
 } node_peer_config_t;
 
 extern const device_role_t DEVICE_ROLE;
@@ -20,6 +21,8 @@ extern const char *DEVICE_ID;
 extern const char *NODE_HMAC_KEY_HEX;
 extern const uint8_t GATEWAY_MAC[6];
 extern const uint8_t GATEWAY_LMK[16];
+extern const uint8_t NODE_EXPECTED_MAC[6];
+extern const char *GATEWAY_CONTROL_KEY_HEX;
 extern const uint8_t ESPNOW_PMK[16];
 extern const uint8_t ESPNOW_CHANNEL;
 extern const char *WIFI_SSID;

@@ -4,7 +4,7 @@ const db = require('../models/db');
 function listEvents(req, res) {
   const { nodeId, tipo, limit = 100 } = req.query;
   const role = db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(req.usuario.id)?.rol;
-  const advanced = ['avanzado', 'administrador'].includes(role);
+  const advanced = ['avanzado', 'master_admin'].includes(role);
 
   let query = `SELECT * FROM eventos WHERE 1=1`;
   const params = [];
@@ -33,7 +33,12 @@ function listEvents(req, res) {
 
 // GET /api/events/:id
 function getEvent(req, res) {
-  const evento = db.prepare(`SELECT * FROM eventos WHERE id = ?`).get(req.params.id);
+  const role = db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(req.usuario.id)?.rol;
+  const advanced = ['avanzado', 'master_admin'].includes(role);
+  const evento = db.prepare(`SELECT * FROM eventos WHERE id = ? AND
+    (? = 1 OR nodo_id IN (SELECT d.device_id FROM kit_devices d
+      JOIN kits k ON k.id = d.kit_id WHERE k.owner_user_id = ?))`)
+    .get(req.params.id, advanced ? 1 : 0, req.usuario.id);
   if (!evento) return res.status(404).json({ error: 'Evento no encontrado' });
   res.json(evento);
 }

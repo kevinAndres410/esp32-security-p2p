@@ -12,6 +12,15 @@ export const claimKit = (claimCode) => call('/claim', { method: 'POST', body: JS
 export const startScan = (kitId) => call(`/${kitId}/scans`, { method: 'POST' });
 export const listCandidates = (kitId) => call(`/${kitId}/candidates`);
 export const listInventory = (kitId) => call(`/${kitId}/inventory`);
+export const listDeviceOperations = (kitId) => call(`/${kitId}/operations`);
+export const createDeviceOperation = (kitId, action, deviceId, activationCode) =>
+  call(`/${kitId}/operations`, {
+    method: 'POST', body: JSON.stringify({ action, deviceId, activationCode }),
+  });
+export const replaceNodeHardware = (kitId, deviceId, macAddress) =>
+  call(`/${kitId}/nodes/${encodeURIComponent(deviceId)}/hardware`, {
+    method: 'PATCH', body: JSON.stringify({ macAddress }),
+  });
 export const requestDevice = (kitId, kitDeviceId, method = 'automatic') => call(`/${kitId}/requests`, {
   method: 'POST', body: JSON.stringify({ kitDeviceId, method }),
 });

@@ -7,6 +7,7 @@ import AlertsEvents from './pages/AlertsEvents';
 import KeyRotationSettings from './pages/KeyRotationSettings';
 import DeviceAdministration from './pages/DeviceAdministration';
 import KitDevices from './pages/KitDevices';
+import MasterAdmin from './pages/MasterAdmin';
 import { requestAdvancedAccess } from './services/access.service';
 import { connectSocket, disconnectSocket } from './services/socket.service';
 import './App.css';
@@ -35,12 +36,29 @@ export default function App() {
   const [accessModal, setAccessModal] = useState(false);
   const [accessBusy, setAccessBusy] = useState(false);
   const [accessError, setAccessError] = useState('');
-  const isAdvanced = usuario?.rol === 'avanzado' || usuario?.rol === 'administrador';
+  const isAdvanced = usuario?.rol === 'avanzado' || usuario?.rol === 'master_admin';
+  const isMaster = usuario?.rol === 'master_admin';
+  const availableTechnicalViews = isMaster
+    ? [...technicalViews, ['master-admin', 'Administrador Maestro']]
+    : technicalViews;
 
   useEffect(() => {
     if (usuario) connectSocket();
     else disconnectSocket();
   }, [usuario]);
+
+  useEffect(() => {
+    const invalidateSession = () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuario');
+      setUsuario(null);
+      setVista('dashboard');
+      setAuthView('login');
+      setAuthMessage('Tu sesión cambió. Inicia sesión de nuevo.');
+    };
+    window.addEventListener('securemesh:session-invalid', invalidateSession);
+    return () => window.removeEventListener('securemesh:session-invalid', invalidateSession);
+  }, []);
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -51,6 +69,7 @@ export default function App() {
   };
 
   const navigate = (view) => {
+    if (view === 'master-admin' && !isMaster) return;
     if (technicalViews.some(([id]) => id === view) && !isAdvanced) {
       setAccessModal(true);
       setTechnicalMenu(false);
@@ -86,19 +105,20 @@ export default function App() {
           <button className={vista === 'dashboard' ? 'active' : ''} onClick={() => navigate('dashboard')}>Inicio</button>
           <button className={vista === 'alertas' ? 'active' : ''} onClick={() => navigate('alertas')}>Alertas y eventos</button>
           <button className={vista === 'kit' ? 'active' : ''} onClick={() => navigate('kit')}>Mis dispositivos</button>
-          <div className={`technical-nav ${technicalViews.some(([id]) => id === vista) ? 'active' : ''}`}>
+          <div className={`technical-nav ${availableTechnicalViews.some(([id]) => id === vista) ? 'active' : ''}`}>
             <button className="technical-trigger" aria-expanded={technicalMenu} onClick={() => isAdvanced ? setTechnicalMenu((open) => !open) : setAccessModal(true)}>Zona Técnica <span>{isAdvanced ? '⌄' : '⌕'}</span></button>
-            {isAdvanced && technicalMenu && <div className="technical-menu">{technicalViews.map(([id, label]) => <button key={id} onClick={() => navigate(id)}>{label}</button>)}</div>}
+            {isAdvanced && technicalMenu && <div className="technical-menu">{availableTechnicalViews.map(([id, label]) => <button key={id} onClick={() => navigate(id)}>{label}</button>)}</div>}
           </div>
           <button className="logout-link" onClick={logout}>Cerrar sesión</button>
         </div>
       </nav>
       {vista === 'dashboard' && <Dashboard usuario={usuario} onNavigate={navigate} isAdvanced={isAdvanced} />}
-      {vista === 'kit' && <KitDevices isAdvanced={usuario?.rol === 'avanzado'} />}
+      {vista === 'kit' && <KitDevices isAdvanced={isAdvanced} />}
       {vista === 'nodos' && isAdvanced && <NodesManagement />}
       {vista === 'alertas' && <AlertsEvents />}
       {vista === 'claves' && isAdvanced && <KeyRotationSettings />}
       {vista === 'dispositivos' && isAdvanced && <DeviceAdministration onNavigate={navigate} />}
+      {vista === 'master-admin' && isMaster && <MasterAdmin usuario={usuario} onRestored={() => { logout(); setAuthMessage('Copia restaurada. Inicia sesión de nuevo.'); }} />}
       {accessModal && <AccessModal status={usuario.estadoAccesoAvanzado} busy={accessBusy} error={accessError} onClose={() => setAccessModal(false)} onRequest={requestAccess} />}
     </div>
   );

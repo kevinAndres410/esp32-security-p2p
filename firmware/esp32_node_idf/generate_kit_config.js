@@ -19,6 +19,9 @@ const literal = (value) => {
   return JSON.stringify(value);
 };
 if (!Array.isArray(kit.nodes) || kit.nodes.length !== 3) throw new Error('El kit requiere exactamente tres nodos');
+if (!/^[a-fA-F0-9]{64}$/.test(kit.gatewayControlKey || '')) {
+  throw new Error('Se requiere una clave de control única de 32 bytes para el Gateway');
+}
 const allMacs = [kit.gatewayMac, ...kit.nodes.map((node) => node.macAddress)].map((item) => mac(item));
 if (new Set(allMacs).size !== 4) throw new Error('MAC duplicada en el kit');
 const gatewayId = literal(kit.gatewayId);
@@ -36,12 +39,16 @@ const uint8_t ESPNOW_PMK[16] = { ${bytes(kit.pmk, 16)} };
 const device_role_t DEVICE_ROLE = DEVICE_ROLE_GATEWAY;
 const char *DEVICE_ID = ${gatewayId};
 const char *NODE_HMAC_KEY_HEX = "";
+const char *GATEWAY_CONTROL_KEY_HEX = ${literal(kit.gatewayControlKey)};
 const uint8_t GATEWAY_LMK[16] = { 0 };
+const uint8_t NODE_EXPECTED_MAC[6] = { 0 };
 ${nodes.map((node, index) => `#elif DEVICE_PROFILE == ${index + 1}
 const device_role_t DEVICE_ROLE = DEVICE_ROLE_NODE;
 const char *DEVICE_ID = ${node.id};
 const char *NODE_HMAC_KEY_HEX = ${node.key};
-const uint8_t GATEWAY_LMK[16] = { ${node.lmk} };`).join('\n')}
+const char *GATEWAY_CONTROL_KEY_HEX = "";
+const uint8_t GATEWAY_LMK[16] = { ${node.lmk} };
+const uint8_t NODE_EXPECTED_MAC[6] = { ${node.mac} };`).join('\n')}
 #else
 #error "DEVICE_PROFILE must be 0..3"
 #endif
@@ -49,11 +56,16 @@ const uint8_t ESPNOW_CHANNEL = 1;
 const char *WIFI_SSID = ${literal(kit.wifiSsid)};
 const char *WIFI_PASSWORD = ${literal(kit.wifiPassword)};
 const char *UPSTREAM_URL = ${literal(kit.upstreamUrl)};
+#if DEVICE_PROFILE == 0
 const node_peer_config_t GATEWAY_PEERS[] = {
 ${nodes.map((node) => `    { .device_id = ${node.id}, .hmac_key_hex = ${node.key},
       .mac = { ${node.mac} }, .lmk = { ${node.lmk} }, .provisioned = true },`).join('\n')}
 };
 const size_t GATEWAY_PEER_COUNT = sizeof(GATEWAY_PEERS) / sizeof(GATEWAY_PEERS[0]);
+#else
+const node_peer_config_t GATEWAY_PEERS[] = { { 0 } };
+const size_t GATEWAY_PEER_COUNT = 0;
+#endif
 `;
 fs.mkdirSync(path.dirname(path.resolve(outputPath)), { recursive: true });
 fs.writeFileSync(path.resolve(outputPath), source, { flag: 'wx' });

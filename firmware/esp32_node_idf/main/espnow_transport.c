@@ -89,3 +89,21 @@ bool espnow_transport_send(const uint8_t destination[6], const protocol_frame_t 
 bool espnow_transport_receive(espnow_received_t *received, uint32_t timeout_ms) {
     return received && xQueueReceive(receive_queue, received, pdMS_TO_TICKS(timeout_ms)) == pdTRUE;
 }
+
+bool espnow_transport_replace_peers(const node_peer_config_t *old_peers, size_t old_count,
+                                    const node_peer_config_t *new_peers, size_t new_count) {
+    for (size_t i = 0; i < old_count; ++i)
+        if (old_peers[i].provisioned && esp_now_is_peer_exist(old_peers[i].mac))
+            (void)esp_now_del_peer(old_peers[i].mac);
+    for (size_t i = 0; i < new_count; ++i) {
+        if (!new_peers[i].provisioned || add_peer(new_peers[i].mac, new_peers[i].lmk)) continue;
+        for (size_t j = 0; j < i; ++j)
+            if (new_peers[j].provisioned && esp_now_is_peer_exist(new_peers[j].mac))
+                (void)esp_now_del_peer(new_peers[j].mac);
+        for (size_t j = 0; j < old_count; ++j)
+            if (old_peers[j].provisioned) (void)add_peer(old_peers[j].mac, old_peers[j].lmk);
+        ESP_LOGE(TAG, "No se pudo aplicar la lista de pares; se restauró la anterior");
+        return false;
+    }
+    return true;
+}

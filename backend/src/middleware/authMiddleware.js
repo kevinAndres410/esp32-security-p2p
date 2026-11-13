@@ -14,6 +14,10 @@ function verificarToken(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secreto_dev');
+    const user = db.prepare('SELECT bloqueado, token_version FROM usuarios WHERE id = ?').get(decoded.id);
+    if (!user || user.bloqueado || (decoded.tokenVersion ?? 0) !== user.token_version) {
+      return res.status(403).json({ error: 'Sesión revocada o cuenta bloqueada' });
+    }
     req.usuario = decoded;
     next();
   } catch (e) {
@@ -23,8 +27,16 @@ function verificarToken(req, res, next) {
 
 function soloAvanzado(req, res, next) {
   const currentRole = db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(req.usuario.id)?.rol;
-  if (!['avanzado', 'administrador'].includes(currentRole)) {
+  if (!['avanzado', 'master_admin'].includes(currentRole)) {
     return res.status(403).json({ error: 'Acceso restringido a usuarios avanzados' });
+  }
+  next();
+}
+
+function soloAdministrador(req, res, next) {
+  const currentRole = db.prepare('SELECT rol FROM usuarios WHERE id = ?').get(req.usuario.id)?.rol;
+  if (currentRole !== 'master_admin') {
+    return res.status(403).json({ error: 'Acceso exclusivo del Administrador Maestro' });
   }
   next();
 }
@@ -97,6 +109,7 @@ function verificarAutenticacionNodo(req, res, next) {
 module.exports = {
   verificarToken,
   soloAvanzado,
+  soloAdministrador,
   generarReto,
   calcularHmac,
   verificarRetoNodo,

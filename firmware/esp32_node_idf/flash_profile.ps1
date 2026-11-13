@@ -14,7 +14,7 @@ $pythonPath = 'C:\Espressif\tools\python\v6.1-beta1\venv\Scripts\python.exe'
 $profileByMac = @{
     'B0:3F:D3:5B:50:B4' = 'gateway'
     '20:50:0D:17:C8:D0' = 'node1'
-    '04:B2:47:54:DA:90' = 'node2'
+    '38:18:2B:8A:16:6C' = 'node2'
     '20:50:0D:17:EC:64' = 'node3'
 }
 

@@ -39,6 +39,13 @@ Los metadatos y el ciphertext quedan autenticados por GCM y HMAC-SHA256.
 
 ## Provisionamiento
 
+`main/config.c` contiene credenciales y claves de cada instalación, por lo que
+está excluido de Git. En una instalación nueva, genere el archivo localmente con
+`node generate_kit_config.js kit-manifest.local.json main/config.c` (el manifiesto
+también debe mantenerse fuera de Git). `main/config.example.c` documenta la
+estructura sin secretos. No compile ni grabe la plantilla de ejemplo en equipos
+reales.
+
 1. Asigne MAC y LMK únicos por nodo en `GATEWAY_PEERS`; copie el mismo LMK y
    MAC del gateway en el firmware de ese nodo.
 2. Ponga la misma clave HMAC de 64 caracteres para cada nodo en ambos lados.

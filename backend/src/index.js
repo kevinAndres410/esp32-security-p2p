@@ -6,28 +6,39 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_SECRET || !process.env.MASTER_ENCRYPTION_KEY) {
+    throw new Error('JWT_SECRET y MASTER_ENCRYPTION_KEY son obligatorios en producción');
+  }
+  if (process.env.WIFI_PROVISIONING_URL &&
+      (!process.env.WIFI_PROVISIONING_URL.startsWith('https://') || !process.env.WIFI_PROVISIONING_SECRET)) {
+    throw new Error('El adaptador Wi-Fi requiere HTTPS y WIFI_PROVISIONING_SECRET en producción');
+  }
+}
+
 const authRoutes = require('./routes/authRoutes');
 const nodesRoutes = require('./routes/nodes.routes');
 const eventsRoutes = require('./routes/events.routes');
 const keysRoutes = require('./routes/keys.routes');
 const gatewayRoutes = require('./routes/gateway.routes');
 const kitsRoutes = require('./routes/kits.routes');
+const masterAdminRoutes = require('./routes/masterAdmin.routes');
 const { verificarToken } = require('./middleware/authMiddleware');
 const { initSocket } = require('./websocket/socket');
-const { startRotation } = require('./crypto/keyManager');
-const { rotateActiveNodeKeys } = require('./services/keyRotation.service');
+const { applyRotationSchedule } = require('./services/rotationScheduler.service');
 
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(',') }));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/gateway', gatewayRoutes);
 app.use('/api/kits', kitsRoutes);
+app.use('/api/master-admin', masterAdminRoutes);
 
 // Rutas Sprint 3, protegidas con el login existente (requieren Bearer token)
 app.use('/api/nodes', verificarToken, nodesRoutes);
@@ -40,11 +51,7 @@ app.get('/api/health', (req, res) => {
 
 initSocket(server);
 
-const rotationMinutes = Number(process.env.KEY_ROTATION_MINUTES || 5);
-startRotation(rotationMinutes, () => {
-  const rotations = rotateActiveNodeKeys();
-  console.log(`[KeyManager] Rotación automática aplicada a ${rotations.length} nodo(s) activos`);
-});
+applyRotationSchedule();
 
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);

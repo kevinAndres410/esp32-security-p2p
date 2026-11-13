@@ -1,6 +1,7 @@
 #include "crypto.h"
 
 #include <string.h>
+#include <stdlib.h>
 #include "psa/crypto.h"
 #include "config.h"
 
@@ -102,6 +103,28 @@ bool crypto_aes256_gcm_decrypt(const char *key_hex, const uint8_t nonce[12],
     memcpy(input + ciphertext_len, tag, 16);
     psa_status_t status = psa_aead_decrypt(key_id, PSA_ALG_GCM, nonce, 12, aad, aad_len,
                                            input, ciphertext_len + 16, plaintext, ciphertext_len, &output_len);
+    (void)psa_destroy_key(key_id);
+    return status == PSA_SUCCESS && output_len == ciphertext_len;
+}
+
+bool crypto_aes256_gcm_decrypt_buffer(const char *key_hex, const uint8_t nonce[12],
+                                      const uint8_t *aad, size_t aad_len,
+                                      const uint8_t *ciphertext, size_t ciphertext_len,
+                                      const uint8_t tag[16], uint8_t *plaintext,
+                                      size_t plaintext_capacity) {
+    if (!nonce || !ciphertext || !tag || !plaintext || ciphertext_len > plaintext_capacity ||
+        ciphertext_len > 4096) return false;
+    mbedtls_svc_key_id_t key_id = {0};
+    if (!import_aes_key(key_hex, PSA_KEY_USAGE_DECRYPT, &key_id)) return false;
+    uint8_t *combined = malloc(ciphertext_len + 16);
+    if (!combined) { (void)psa_destroy_key(key_id); return false; }
+    memcpy(combined, ciphertext, ciphertext_len);
+    memcpy(combined + ciphertext_len, tag, 16);
+    size_t output_len = 0;
+    psa_status_t status = psa_aead_decrypt(key_id, PSA_ALG_GCM, nonce, 12,
+        aad, aad_len, combined, ciphertext_len + 16,
+        plaintext, plaintext_capacity, &output_len);
+    free(combined);
     (void)psa_destroy_key(key_id);
     return status == PSA_SUCCESS && output_len == ciphertext_len;
 }

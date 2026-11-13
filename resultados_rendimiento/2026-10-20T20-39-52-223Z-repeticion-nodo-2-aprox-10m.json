@@ -1,0 +1,44 @@
+{
+  "label": "repeticion-nodo-2-aprox-10m",
+  "distance": "aprox-10-m",
+  "startedAt": "2026-10-20T20:39:52.223Z",
+  "finishedAt": "2026-10-20T20:42:52.252Z",
+  "durationSeconds": 180.03,
+  "expectedDeviceCount": 1,
+  "totalReceivedPackets": 17,
+  "aggregateThroughputPacketsPerSecond": 0.0944,
+  "simultaneousPresencePercent": 100,
+  "devices": [
+    {
+      "deviceId": "esp32-002",
+      "mac": "38:18:2B:8A:16:6C",
+      "receivedPackets": 17,
+      "expectedPackets": 18,
+      "missingPackets": 1,
+      "lossPercent": 5.56,
+      "rebootEpochs": 1,
+      "latencyRttMs": null,
+      "interarrivalMs": {
+        "average": 10641.81,
+        "p95": 20165,
+        "maximum": 20165
+      },
+      "memoryBytes": {
+        "averageFree": 217544,
+        "minimumFree": 217544,
+        "minimumEver": 215684
+      },
+      "cpuPercent": {
+        "average": 0.06,
+        "p95": 0.06,
+        "maximum": 0.06
+      }
+    }
+  ],
+  "notes": [
+    "RTT incluye nodo, ESP-NOW, gateway, petición/respuesta HTTP del backend y ACK de regreso.",
+    "La pérdida es de saltos de secuencia entre paquetes recibidos por cada arranque; no incluye pérdidas anteriores/posteriores ni durante reinicios.",
+    "La presencia simultánea se calcula cada segundo con una tolerancia de 25 s, tras 20 s de calentamiento.",
+    "El consumo de energía requiere corriente y voltaje de un medidor externo; no se estima por software."
+  ]
+}

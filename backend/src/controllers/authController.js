@@ -22,16 +22,27 @@ function register(req, res) {
     return res.status(400).json({ error: 'Debes aceptar explícitamente los riesgos del modo avanzado' });
   }
   const normalizedEmail = email.trim().toLowerCase();
-  const rol = tieneConocimientoTecnico ? 'avanzado' : 'basico';
+  // La autodeclaración solo crea una solicitud; el rol lo concede un administrador.
+  const rol = 'basico';
   const hash = bcrypt.hashSync(password, 10);
   try {
-    db.prepare(`INSERT INTO usuarios
-      (nombre, email, password, rol, tiene_conocimiento_tecnico, estado_acceso_avanzado, riesgos_aceptados_en, riesgos_version)
-      VALUES (?, ?, ?, ?, ?, 'none', ?, ?)`)
-      .run(nombre.trim(), normalizedEmail, hash, rol, tieneConocimientoTecnico ? 1 : 0,
-        tieneConocimientoTecnico ? new Date().toISOString() : null,
-        tieneConocimientoTecnico ? 'v1' : null);
-    res.status(201).json({ mensaje: 'Usuario registrado correctamente', email: normalizedEmail });
+    db.transaction(() => {
+      const created = db.prepare(`INSERT INTO usuarios
+        (nombre, email, password, rol, tiene_conocimiento_tecnico, estado_acceso_avanzado, riesgos_aceptados_en, riesgos_version)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run(nombre.trim(), normalizedEmail, hash, rol, tieneConocimientoTecnico ? 1 : 0,
+          tieneConocimientoTecnico ? 'pending' : 'none',
+          tieneConocimientoTecnico ? new Date().toISOString() : null,
+          tieneConocimientoTecnico ? 'v1' : null);
+      if (tieneConocimientoTecnico) {
+        db.prepare("INSERT INTO solicitudes_acceso_avanzado (usuario_id, estado, motivo) VALUES (?, 'pending', ?)")
+          .run(created.lastInsertRowid, 'Solicitado durante el registro');
+      }
+    })();
+    res.status(201).json({
+      mensaje: tieneConocimientoTecnico ? 'Cuenta creada. El acceso avanzado queda pendiente de aprobación.' : 'Usuario registrado correctamente',
+      email: normalizedEmail,
+    });
   } catch (e) {
     res.status(400).json({ error: 'El email ya está registrado' });
   }
@@ -59,7 +70,7 @@ function login(req, res) {
 
   db.prepare(`UPDATE usuarios SET intentos_fallidos = 0 WHERE id = ?`).run(usuario.id);
   const token = jwt.sign(
-    { id: usuario.id, email: usuario.email, rol: usuario.rol },
+    { id: usuario.id, email: usuario.email, rol: usuario.rol, tokenVersion: usuario.token_version },
     process.env.JWT_SECRET || 'secreto_dev',
     { expiresIn: '8h' }
   );
@@ -79,7 +90,7 @@ function login(req, res) {
 function requestAdvancedAccess(req, res) {
   const user = db.prepare('SELECT id, rol, estado_acceso_avanzado FROM usuarios WHERE id = ?').get(req.usuario.id);
   if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-  if (user.rol === 'avanzado') return res.status(409).json({ error: 'El usuario ya tiene acceso avanzado' });
+  if (['avanzado', 'master_admin'].includes(user.rol)) return res.status(409).json({ error: 'El usuario ya tiene acceso avanzado' });
   if (user.estado_acceso_avanzado === 'pending') return res.status(409).json({ error: 'Ya existe una solicitud pendiente' });
 
   const transaction = db.transaction(() => {

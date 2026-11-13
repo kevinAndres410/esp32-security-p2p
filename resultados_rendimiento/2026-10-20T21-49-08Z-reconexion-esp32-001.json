@@ -1,0 +1,11 @@
+{
+  "deviceId": "esp32-001",
+  "mac": "20:50:0D:17:C8:D0",
+  "resetStartedAt": "2026-10-20T21:49:08.423239+00:00",
+  "releasedAt": "2026-10-20T21:50:08.426117+00:00",
+  "holdSeconds": 60,
+  "offlineAgeSecondsBeforeRelease": 69.77,
+  "observedDisconnected": true,
+  "firstBackendHeartbeatAfterRelease": "2026-10-20T21:50:12.305000+00:00",
+  "reconnectionSeconds": 3.879
+}
